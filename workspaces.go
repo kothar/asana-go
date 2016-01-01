@@ -40,20 +40,30 @@ func (c *Client) Workspace(id int64) (*Workspace, error) {
 	return result, err
 }
 
+// Expand loads the full details for this Workspace
+func (w *Workspace) Expand() error {
+	if w.expanded {
+		return nil
+	}
+
+	e, err := w.Client.Workspace(w.ID)
+	if err != nil {
+		return err
+	}
+
+	*w = *e
+	return nil
+}
+
 // Workspaces returns workspaces and organizations accessible to the currently
 // authorized account
 func (c *Client) Workspaces() ([]*Workspace, error) {
 	var result []*Workspace
 
 	// Force all fields to be shown
-	opts := &Options{
-		Fields: []string{
-			"name",
-			"is_organization",
-		},
-	}
+	opts := Fields(Workspace{})
 
 	// Make the request
-	err := c.get("/workspaces", opts, &result)
+	err := c.get("/workspaces", nil, &result, opts)
 	return result, err
 }

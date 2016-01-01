@@ -74,32 +74,10 @@ type ExternalData struct {
 	Data string `json:"data,omitempty"`
 }
 
-// Task is the basic object around which many operations in Asana are
-// centered. In the Asana application, multiple tasks populate the middle pane
-// according to some view parameters, and the set of selected tasks determines
-// the more detailed information presented in the details pane.
-//
-// A section, at its core, is a task whose name ends with the colon character
-// :. Sections are unique in that they will be included in the memberships
-// field of task objects returned in the API when the task is within a
-// section. As explained below they can also be used to manipulate the
-// ordering of a task within a project.
-//
-// Queries return a compact representation of each object which is typically
-// the id and name fields. Interested in a specific set of fields or all of
-// the fields? Use field selectors to manipulate what data is included in a
-// response.
-type Task struct {
-	HasID
+// TaskBase contains the modifiable fields for the Task object
+type TaskBase struct {
 	HasName
-	HasParent
-	HasDates
 	HasNotes
-	HasWorkspace
-	HasHearts
-	HasFollowers
-
-	expandable
 
 	// User to which this task is assigned, or null if the task is unassigned.
 	Assignee *User `json:"assignee,omitempty"`
@@ -135,6 +113,48 @@ type Task struct {
 	// Data for more details.
 	External *ExternalData `json:"external,omitempty"`
 
+	// Create-only. Array of tags associated with this task. This property may
+	// be specified on creation using just an array of tag IDs. In order to
+	// change tags on an existing task use addTag and removeTag.
+	Tags []*Tag `json:"tags,omitempty"`
+}
+
+// NewTask represents a request to create a new Task
+type NewTask struct {
+	TaskBase
+
+	Workspace int64   `json:"workspace,omitempty"`
+	Projects  []int64 `json:"projects,omitempty"`
+	Parent    int64   `json:"parent,omitempty"`
+}
+
+// Task is the basic object around which many operations in Asana are
+// centered. In the Asana application, multiple tasks populate the middle pane
+// according to some view parameters, and the set of selected tasks determines
+// the more detailed information presented in the details pane.
+//
+// A section, at its core, is a task whose name ends with the colon character
+// :. Sections are unique in that they will be included in the memberships
+// field of task objects returned in the API when the task is within a
+// section. As explained below they can also be used to manipulate the
+// ordering of a task within a project.
+//
+// Queries return a compact representation of each object which is typically
+// the id and name fields. Interested in a specific set of fields or all of
+// the fields? Use field selectors to manipulate what data is included in a
+// response.
+type Task struct {
+	TaskBase
+
+	HasID
+	HasParent
+	HasDates
+	HasWorkspace
+	HasHearts
+	HasFollowers
+
+	expandable
+
 	// Create-only. Array of projects this task is associated with. At task
 	// creation time, this array can be used to add the task to many projects
 	// at once. After task creation, these associations can be modified using
@@ -148,11 +168,6 @@ type Task struct {
 	// that over time, more types of memberships may be added to this
 	// property.
 	Memberships []*Membership `json:"memberships,omitempty"`
-
-	// Create-only. Array of tags associated with this task. This property may
-	// be specified on creation using just an array of tag IDs. In order to
-	// change tags on an existing task use addTag and removeTag.
-	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // Task retrieves a task record by ID
@@ -164,12 +179,27 @@ func (c *Client) Task(id int64) (*Task, error) {
 	return result, err
 }
 
+// Expand loads the full details for this Task
+func (t *Task) Expand() error {
+	if t.expanded {
+		return nil
+	}
+
+	e, err := t.Client.Task(t.ID)
+	if err != nil {
+		return err
+	}
+
+	*t = *e
+	return nil
+}
+
 // Tasks returns a list of tasks in this project
-func (p *Project) Tasks() ([]*Task, error) {
+func (p *Project) Tasks(opts ...*Options) ([]*Task, error) {
 	var result []*Task
 
 	// Make the request
-	err := p.Client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result)
+	err := p.Client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result, opts...)
 	return result, err
 }
 
@@ -183,11 +213,20 @@ func (t *Task) Subtasks() ([]*Task, error) {
 }
 
 // CreateTask creates a new task in the given project
-func (w *Workspace) CreateTask(task *Task) (*Task, error) {
+func (c *Client) CreateTask(task *NewTask) (*Task, error) {
 	result := &Task{}
 	result.expanded = true
 
-	err := w.Client.post(fmt.Sprintf("/workspace/%d/tasks", w.ID), task, result, nil)
+	err := c.post("/tasks", task, result)
+	return result, err
+}
+
+// CreateSubtask creates a new task as a subtask of this task
+func (t *Task) CreateSubtask(task *Task) (*Task, error) {
+	result := &Task{}
+	result.expanded = true
+
+	err := t.Client.post(fmt.Sprintf("/tasks/%d/subtasks", t.ID), task, result)
 	return result, err
 }
 
@@ -195,6 +234,6 @@ func (w *Workspace) CreateTask(task *Task) (*Task, error) {
 func (c *Client) QueryTasks(query *TaskQuery) ([]*Task, error) {
 	var result []*Task
 
-	err := c.get("/tasks", query, &result)
+	err := c.get("/tasks", &result, query)
 	return result, err
 }

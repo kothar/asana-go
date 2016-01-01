@@ -13,31 +13,11 @@ type ProjectStatus struct {
 	Author *User  `json:"author,omitempty"`
 }
 
-// Project represents a prioritized list of tasks in Asana. It exists in a
-// single workspace or organization and is accessible to a subset of users in
-// that workspace or organization, depending on its permissions.
-//
-// Projects in organizations are shared with a single team. You cannot
-// currently change the team of a project via the API. Non-organization
-// workspaces do not have teams and so you should not specify the team of
-// project in a regular workspace.
-//
-// Followers of a project are a subset of the members of that project.
-// Followers of a project will receive all updates including tasks created,
-// added and removed from that project. Members of the project have access to
-// and will receive status updates of the project. Adding followers to a
-// project will add them as members if they are not already, removing
-// followers from a project will not affect membership.
-type Project struct {
-	HasID
+// ProjectBase contains the parts of Project which are not related to a specific instance
+type ProjectBase struct {
 	HasName
-	HasDates
 	HasNotes
-	HasWorkspace
-	HasFollowers
 	HasColor
-
-	expandable
 
 	// The current owner of the project, may be null.
 	Owner *User `json:"owner,omitempty"`
@@ -59,12 +39,46 @@ type Project struct {
 	// explicitly checking to see if they have access.
 	Public bool `json:"public,omitempty"`
 
-	// Read-only. Array of users who are members of this project.
-	Members []*User `json:"members,omitempty"`
-
 	// Create-only. The team that this project is shared with. This field only
 	// exists for projects in organizations.
 	Team *Team `json:"team,omitempty"`
+}
+
+// NewProject represents a request to create a new project
+type NewProject struct {
+	ProjectBase
+
+	Workspace int64 `json:"workspace,omitempty"`
+	Team      int64 `json:"team,omitempty"`
+}
+
+// Project represents a prioritized list of tasks in Asana. It exists in a
+// single workspace or organization and is accessible to a subset of users in
+// that workspace or organization, depending on its permissions.
+//
+// Projects in organizations are shared with a single team. You cannot
+// currently change the team of a project via the API. Non-organization
+// workspaces do not have teams and so you should not specify the team of
+// project in a regular workspace.
+//
+// Followers of a project are a subset of the members of that project.
+// Followers of a project will receive all updates including tasks created,
+// added and removed from that project. Members of the project have access to
+// and will receive status updates of the project. Adding followers to a
+// project will add them as members if they are not already, removing
+// followers from a project will not affect membership.
+type Project struct {
+	ProjectBase
+
+	HasID
+	HasDates
+	HasWorkspace
+	HasFollowers
+
+	// Read-only. Array of users who are members of this project.
+	Members []*User `json:"members,omitempty"`
+
+	expandable
 }
 
 // Project looks up a single Project record by ID
@@ -73,7 +87,7 @@ func (c *Client) Project(id int64) (*Project, error) {
 	result.expanded = true
 
 	// Make the request
-	err := c.get(fmt.Sprintf("/projects/%d", id), nil, &result)
+	err := c.get(fmt.Sprintf("/projects/%d", id), nil, result)
 	return result, err
 }
 
@@ -83,5 +97,14 @@ func (w *Workspace) Projects() ([]*Project, error) {
 
 	// Make the request
 	err := w.Client.get(fmt.Sprintf("/workspaces/%d/projects", w.ID), nil, &result)
+	return result, err
+}
+
+// CreateProject adds a new project to a workspace
+func (c *Client) CreateProject(project *NewProject) (*Project, error) {
+	result := &Project{}
+	result.expanded = true
+
+	err := c.post("/projects", project, result)
 	return result, err
 }

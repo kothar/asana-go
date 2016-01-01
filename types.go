@@ -1,7 +1,7 @@
 package asana
 
 import (
-	"reflect"
+	"encoding/json"
 	"time"
 )
 
@@ -9,15 +9,24 @@ import (
 // the Asana API when a date is required: '2012-03-26'
 type Date time.Time
 
+// Jan 2 15:04:05 2006 MST
+const dateLayout = "2006-01-02"
+
 // MarshalJSON implements the json.Marshaller interface
 func (d *Date) MarshalJSON() ([]byte, error) {
-	s := time.Time(*d).Format("2012-03-26")
+	s := time.Time(*d).Format(dateLayout)
 	return []byte(s), nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaller interface
 func (d *Date) UnmarshalJSON(value []byte) error {
-	t, err := time.Parse("2012-03-26", string(value))
+
+	var dateString string
+	if err := json.Unmarshal(value, &dateString); err != nil {
+		return err
+	}
+
+	t, err := time.Parse(dateLayout, dateString)
 	if err != nil {
 		return err
 	}
@@ -105,63 +114,6 @@ type HasColor struct {
 	// purple, dark-warm-gray, light-pink, light-green, light-blue, light-red,
 	// light-teal, light-yellow, light-orange, light-purple, light-warm-gray.
 	Color string `json:"color,omitempty"`
-}
-
-// Marks whether this object is partially loaded
-type expandable struct {
-	Client   *Client `json:"-"`
-	expanded bool
-}
-
-var expandableType = reflect.TypeOf(expandable{})
-
-// Populates expandable objects with a reference to the current client.
-// Injection will stop when an expandable type with a client already set is
-// found.
-func injectClient(client *Client, object interface{}) {
-	clientValue := reflect.ValueOf(client)
-	value := reflect.ValueOf(object)
-
-	injectClientValue(clientValue, value)
-}
-
-func injectClientValue(clientValue, value reflect.Value) {
-
-	if value.Kind() == reflect.Ptr || value.Kind() == reflect.Interface {
-		if !value.IsNil() {
-			injectClientValue(clientValue, value.Elem())
-		}
-		return
-	}
-
-	if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
-		for j := 0; j < value.Len(); j++ {
-			element := value.Index(j)
-			if element.Kind() == reflect.Struct {
-				injectClientValue(clientValue, element)
-			}
-		}
-		return
-	}
-
-	if value.Kind() == reflect.Struct {
-		if exp := value.FieldByName("expandable"); exp.IsValid() {
-			if exp.Type() == expandableType {
-				clientField := exp.FieldByName("Client")
-				if !clientField.IsNil() {
-					return
-				}
-
-				clientField.Set(clientValue)
-
-				// Inject into child fields
-				for i := 0; i < value.NumField(); i++ {
-					injectClientValue(clientValue, value.Field(i))
-				}
-			}
-		}
-	}
-	return
 }
 
 // Options - In addition to providing fields and their values in a request,
@@ -325,23 +277,4 @@ type Story struct {
 
 	// Read-only. The type of story this is.
 	Type string `json:"type,omitempty"`
-}
-
-// Tag is a label that can be attached to any task in Asana. It exists in a
-// single workspace or organization.
-//
-// Tags have some metadata associated with them, but it is possible that we
-// will simplify them in the future so it is not encouraged to rely too
-// heavily on it. Unlike projects, tags do not provide any ordering on the
-// tasks they are associated with.
-type Tag struct {
-	HasID
-	HasName
-	HasCreated
-	HasNotes
-	HasWorkspace
-	HasFollowers
-	HasColor
-
-	expandable
 }

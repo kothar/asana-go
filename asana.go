@@ -29,6 +29,12 @@ type Client struct {
 	DefaultOptions Options
 }
 
+// Marks whether an object is partially loaded
+type expandable struct {
+	Client   *Client `json:"-"`
+	expanded bool
+}
+
 // NewClient instantiates a new Asana client with the given HTTP client and
 // the default base URL
 func NewClient(httpClient *http.Client) *Client {
@@ -55,6 +61,7 @@ type response struct {
 type Error struct {
 	Message string `json:"message"`
 	Phrase  string `json:"phrase"`
+	Help    string `json:"help"`
 }
 
 func (err Error) Error() string {
@@ -68,27 +75,51 @@ func (c *Client) getURL(path string) string {
 	return c.BaseURL.String() + path
 }
 
-func (c *Client) get(path string, request, result interface{}) error {
-
-	// Encode default options
-	q, err := query.Values(c.DefaultOptions)
+func mergeQuery(q url.Values, request interface{}) error {
+	queryParams, err := query.Values(request)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to marshal request to query parameters: %s", err)
 	}
 
-	// Encode query params
+	// Merge with defaults
+	for key, values := range queryParams {
+		q.Del(key)
+		for _, value := range values {
+			q.Add(key, value)
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) get(path string, request, result interface{}, opts ...*Options) error {
+
+	// Encode default options
+	if c.Debug {
+		log.Printf("Default options: %+v", c.DefaultOptions)
+	}
+	q, err := query.Values(c.DefaultOptions)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal DefaultOptions to query parameters: %s", err)
+	}
+
+	// Encode request
 	if request != nil {
-		queryParams, err := query.Values(request)
-		if err != nil {
+		if c.Debug {
+			log.Printf("Request: %+v", request)
+		}
+		if err := mergeQuery(q, request); err != nil {
 			return err
 		}
+	}
 
-		// Merge with defaults
-		for key, values := range queryParams {
-			q.Del(key)
-			for _, value := range values {
-				q.Add(key, value)
-			}
+	// Encode query options
+	for _, options := range opts {
+		if c.Debug {
+			log.Printf("Options: %+v", options)
+		}
+		if err := mergeQuery(q, options); err != nil {
+			return err
 		}
 	}
 	path = path + "?" + q.Encode()
@@ -99,18 +130,27 @@ func (c *Client) get(path string, request, result interface{}) error {
 	}
 	resp, err := c.HTTPClient.Get(c.getURL(path))
 	if err != nil {
-		return err
+		return fmt.Errorf("GET error: %s", err)
 	}
 
 	return c.parseResponse(resp, result)
 }
 
-func (c *Client) post(path string, data, result interface{}, options *Options) error {
+func (c *Client) post(path string, data, result interface{}, opts ...*Options) error {
+
+	// Prepare options
+	var options *Options
+	if opts != nil {
+		options = opts[0]
+	}
+	if options == nil {
+		options = &Options{}
+	}
+	if err := mergo.Merge(options, c.DefaultOptions); err != nil {
+		return fmt.Errorf("unable to merge options: %s", err)
+	}
 
 	// Build request
-	if err := mergo.Merge(options, c.DefaultOptions); err != nil {
-		return err
-	}
 	req := &request{
 		Data:    data,
 		Options: options,
@@ -124,12 +164,12 @@ func (c *Client) post(path string, data, result interface{}, options *Options) e
 
 	// Make request
 	if c.Debug {
-		log.Printf("POST %s", path)
-		log.Printf("Request: %s", body)
+		body, _ := json.MarshalIndent(req, "", "  ")
+		log.Printf("POST %s\n%s", path, body)
 	}
 	resp, err := c.HTTPClient.Post(c.getURL(path), "application/json", bytes.NewReader(body))
 	if err != nil {
-		return err
+		return fmt.Errorf("POST error: %s", err)
 	}
 
 	return c.parseResponse(resp, result)
@@ -144,7 +184,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
 		return err
 	}
 	if c.Debug {
-		log.Printf("Response: %s", body)
+		log.Printf("%s\n%s", resp.Status, body)
 	}
 
 	// Decode the response
@@ -154,9 +194,19 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
 	}
 
 	// Check for errors
-	if resp.StatusCode != 200 {
+	switch resp.StatusCode {
+	case 200: // OK
+	case 201: // Object created
+		// TODO cache the response based on the Location header
+	case 401:
 		if value.Errors != nil {
-			return value.Errors[0]
+			return fmt.Errorf("Authorization error: %s", value.Errors[0])
+		}
+
+		return fmt.Errorf("Authorization error: Status %d", resp.StatusCode)
+	default:
+		if value.Errors != nil {
+			return fmt.Errorf("API error: %s", value.Errors[0])
 		}
 
 		return fmt.Errorf("Unexpected error: Status %d", resp.StatusCode)
