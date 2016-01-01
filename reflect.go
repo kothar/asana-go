@@ -29,9 +29,7 @@ func injectClientValue(clientValue, value reflect.Value) {
 	if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
 		for j := 0; j < value.Len(); j++ {
 			element := value.Index(j)
-			if element.Kind() == reflect.Struct {
-				injectClientValue(clientValue, element)
-			}
+			injectClientValue(clientValue, element)
 		}
 		return
 	}
