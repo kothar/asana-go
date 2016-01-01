@@ -1,0 +1,87 @@
+package asana
+
+import (
+	"fmt"
+)
+
+// ProjectStatus is a description of the project’s status containing a color
+// (must be either null or one of: green, yellow, red) and a short
+// description.
+type ProjectStatus struct {
+	Color  string `json:"color,omitempty"`
+	Text   string `json:"text,omitempty"`
+	Author *User  `json:"author,omitempty"`
+}
+
+// Project represents a prioritized list of tasks in Asana. It exists in a
+// single workspace or organization and is accessible to a subset of users in
+// that workspace or organization, depending on its permissions.
+//
+// Projects in organizations are shared with a single team. You cannot
+// currently change the team of a project via the API. Non-organization
+// workspaces do not have teams and so you should not specify the team of
+// project in a regular workspace.
+//
+// Followers of a project are a subset of the members of that project.
+// Followers of a project will receive all updates including tasks created,
+// added and removed from that project. Members of the project have access to
+// and will receive status updates of the project. Adding followers to a
+// project will add them as members if they are not already, removing
+// followers from a project will not affect membership.
+type Project struct {
+	HasID
+	HasName
+	HasDates
+	HasNotes
+	HasWorkspace
+	HasFollowers
+	HasColor
+
+	expandable
+
+	// The current owner of the project, may be null.
+	Owner *User `json:"owner,omitempty"`
+
+	// A description of the project’s status containing a color (must be
+	// either null or one of: green, yellow, red) and a short description.
+	CurrentStatus *ProjectStatus `json:"current_status,omitempty"`
+
+	// The day on which this project is due. This takes a date with format
+	// YYYY-MM-DD.
+	DueDate *Date `json:"due_date,omitempty"`
+
+	// True if the project is archived, false if not. Archived projects do not
+	// show in the UI by default and may be treated differently for queries.
+	Archived bool `json:"archived,omitempty"`
+
+	// True if the project is public to the organization. If false, do not
+	// share this project with other users in this organization without
+	// explicitly checking to see if they have access.
+	Public bool `json:"public,omitempty"`
+
+	// Read-only. Array of users who are members of this project.
+	Members []*User `json:"members,omitempty"`
+
+	// Create-only. The team that this project is shared with. This field only
+	// exists for projects in organizations.
+	Team *Team `json:"team,omitempty"`
+}
+
+// Project looks up a single Project record by ID
+func (c *Client) Project(id int64) (*Project, error) {
+	result := &Project{}
+	result.expanded = true
+
+	// Make the request
+	err := c.get(fmt.Sprintf("/projects/%d", id), nil, &result)
+	return result, err
+}
+
+// Projects returns a list of projects in this workspace
+func (w *Workspace) Projects() ([]*Project, error) {
+	var result []*Project
+
+	// Make the request
+	err := w.Client.get(fmt.Sprintf("/workspaces/%d/projects", w.ID), nil, &result)
+	return result, err
+}
