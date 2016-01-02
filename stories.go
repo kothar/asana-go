@@ -1,5 +1,9 @@
 package asana
 
+import (
+	"fmt"
+)
+
 // StoryBase contains the text of a story, as used when creating a new comment
 type StoryBase struct {
 	// Create-only. Human-readable text for the story or comment. This will
@@ -62,12 +66,12 @@ func (t *Task) Stories(opts ...*Options) ([]*Story, error) {
 }
 
 // CreateComment adds a comment story to a task
-func (t *Task) CreateComment(story *StoryBase) {
-	c.info("Creating comment for task %q", t.Name)
+func (t *Task) CreateComment(story *StoryBase) (*Story, error) {
+	t.info("Creating comment for task %q", t.Name)
 
 	result := &Story{}
 	result.expanded = true
 
-	err := c.post(fmt.Sprintf("/tasks/%d/stories", t.ID), result)
+	err := t.Client.post(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, result)
 	return result, err
 }
