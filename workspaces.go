@@ -27,11 +27,15 @@ type Workspace struct {
 	// Whether the workspace is an organization.
 	IsOrganization bool `json:"is_organization,omitempty"`
 
+	// Undocumented in API docs
 	EmailDomains []string `json:"email_domains,omitempty"`
+
+	cachedTags map[string]*Tag
 }
 
 // Workspace looks up a single Workspace record by ID
 func (c *Client) Workspace(id int64) (*Workspace, error) {
+	c.trace("Loading workspace %d", id)
 	result := &Workspace{}
 	result.expanded = true
 
@@ -42,6 +46,8 @@ func (c *Client) Workspace(id int64) (*Workspace, error) {
 
 // Expand loads the full details for this Workspace
 func (w *Workspace) Expand() error {
+	w.trace("Loading workspace details for %q\n", w.Name)
+
 	if w.expanded {
 		return nil
 	}
@@ -58,6 +64,7 @@ func (w *Workspace) Expand() error {
 // Workspaces returns workspaces and organizations accessible to the currently
 // authorized account
 func (c *Client) Workspaces() ([]*Workspace, error) {
+	c.trace("Listing workspaces...\n")
 	var result []*Workspace
 
 	// Force all fields to be shown

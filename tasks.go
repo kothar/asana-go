@@ -89,10 +89,6 @@ type TaskBase struct {
 	// True if the task is currently marked complete, false if not.
 	Completed bool `json:"completed,omitempty"`
 
-	// Read-only. The time at which this task was completed, or null if the
-	// task is incomplete.
-	CompletedAt *time.Time `json:"completed_at,omitempty"`
-
 	// Date on which this task is due, or null if the task has no due date.
 	// This takes a date with YYYY-MM-DD format and should not be used
 	// together with due_at.
@@ -112,11 +108,14 @@ type TaskBase struct {
 	// you may use the original object id. See the page on Custom External
 	// Data for more details.
 	External *ExternalData `json:"external,omitempty"`
+}
 
-	// Create-only. Array of tags associated with this task. This property may
-	// be specified on creation using just an array of tag IDs. In order to
-	// change tags on an existing task use addTag and removeTag.
-	Tags []*Tag `json:"tags,omitempty"`
+// Validate checks the task data and fixes any problems
+func (t *TaskBase) Validate() error {
+	if t.Assignee == nil {
+		t.AssigneeStatus = ""
+	}
+	return nil
 }
 
 // NewTask represents a request to create a new Task
@@ -124,8 +123,9 @@ type NewTask struct {
 	TaskBase
 
 	Workspace int64   `json:"workspace,omitempty"`
-	Projects  []int64 `json:"projects,omitempty"`
 	Parent    int64   `json:"parent,omitempty"`
+	Projects  []int64 `json:"projects,omitempty"`
+	Tags      []int64 `json:"tags,omitempty"`
 }
 
 // Task is the basic object around which many operations in Asana are
@@ -155,6 +155,10 @@ type Task struct {
 
 	expandable
 
+	// Read-only. The time at which this task was completed, or null if the
+	// task is incomplete.
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
+
 	// Create-only. Array of projects this task is associated with. At task
 	// creation time, this array can be used to add the task to many projects
 	// at once. After task creation, these associations can be modified using
@@ -168,10 +172,16 @@ type Task struct {
 	// that over time, more types of memberships may be added to this
 	// property.
 	Memberships []*Membership `json:"memberships,omitempty"`
+
+	// Create-only. Array of tags associated with this task. This property may
+	// be specified on creation using just an array of tag IDs. In order to
+	// change tags on an existing task use addTag and removeTag.
+	Tags []*Tag `json:"tags,omitempty"`
 }
 
 // Task retrieves a task record by ID
 func (c *Client) Task(id int64) (*Task, error) {
+	c.trace("Loading task %d", id)
 	result := &Task{}
 	result.expanded = true
 
@@ -181,6 +191,8 @@ func (c *Client) Task(id int64) (*Task, error) {
 
 // Expand loads the full details for this Task
 func (t *Task) Expand() error {
+	t.trace("Loading task details for %q", t.Name)
+
 	if t.expanded {
 		return nil
 	}
@@ -196,6 +208,7 @@ func (t *Task) Expand() error {
 
 // Tasks returns a list of tasks in this project
 func (p *Project) Tasks(opts ...*Options) ([]*Task, error) {
+	p.trace("Listing tasks in %q", p.Name)
 	var result []*Task
 
 	// Make the request
@@ -204,16 +217,20 @@ func (p *Project) Tasks(opts ...*Options) ([]*Task, error) {
 }
 
 // Subtasks returns a list of tasks in this project
-func (t *Task) Subtasks() ([]*Task, error) {
+func (t *Task) Subtasks(opts ...*Options) ([]*Task, error) {
+	t.trace("Listing subtasks for %q", t.Name)
+
 	var result []*Task
 
 	// Make the request
-	err := t.Client.get(fmt.Sprintf("/tasks/%d/subtasks", t.ID), nil, &result)
+	err := t.Client.get(fmt.Sprintf("/tasks/%d/subtasks", t.ID), nil, &result, opts...)
 	return result, err
 }
 
 // CreateTask creates a new task in the given project
 func (c *Client) CreateTask(task *NewTask) (*Task, error) {
+	c.info("Creating task %q", task.Name)
+
 	result := &Task{}
 	result.expanded = true
 
@@ -223,6 +240,8 @@ func (c *Client) CreateTask(task *NewTask) (*Task, error) {
 
 // CreateSubtask creates a new task as a subtask of this task
 func (t *Task) CreateSubtask(task *Task) (*Task, error) {
+	t.info("Creating subtask %q", task.Name)
+
 	result := &Task{}
 	result.expanded = true
 

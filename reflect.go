@@ -8,20 +8,18 @@ import (
 var expandableType = reflect.TypeOf(expandable{})
 
 // Populates expandable objects with a reference to the current client.
-// Injection will stop when an expandable type with a client already set is
-// found.
-func injectClient(client *Client, object interface{}) {
-	clientValue := reflect.ValueOf(client)
+// Object graph must not contain cycles, or an infinite loop will occur.
+func (c *Client) inject(object interface{}) {
+	clientValue := reflect.ValueOf(c)
 	value := reflect.ValueOf(object)
 
-	injectClientValue(clientValue, value)
+	c.injectClientValue(clientValue, value)
 }
 
-func injectClientValue(clientValue, value reflect.Value) {
-
+func (c *Client) injectClientValue(clientValue, value reflect.Value) {
 	if value.Kind() == reflect.Ptr || value.Kind() == reflect.Interface {
 		if !value.IsNil() {
-			injectClientValue(clientValue, value.Elem())
+			c.injectClientValue(clientValue, value.Elem())
 		}
 		return
 	}
@@ -29,28 +27,23 @@ func injectClientValue(clientValue, value reflect.Value) {
 	if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
 		for j := 0; j < value.Len(); j++ {
 			element := value.Index(j)
-			injectClientValue(clientValue, element)
+			c.injectClientValue(clientValue, element)
 		}
 		return
 	}
 
 	if value.Kind() == reflect.Struct {
-		if exp := value.FieldByName("expandable"); exp.IsValid() {
-			if exp.Type() == expandableType {
-				clientField := exp.FieldByName("Client")
-				if !clientField.IsNil() {
-					return
-				}
+		// Inject into child fields
+		for i := 0; i < value.NumField(); i++ {
+			c.injectClientValue(clientValue, value.Field(i))
+		}
 
-				clientField.Set(clientValue)
-
-				// Inject into child fields
-				for i := 0; i < value.NumField(); i++ {
-					injectClientValue(clientValue, value.Field(i))
-				}
-			}
+		if value.Type() == expandableType {
+			clientField := value.FieldByName("Client")
+			clientField.Set(clientValue)
 		}
 	}
+
 	return
 }
 

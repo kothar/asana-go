@@ -26,6 +26,7 @@ type Client struct {
 	HTTPClient *http.Client
 
 	Debug          bool
+	Verbose        []bool
 	DefaultOptions Options
 }
 
@@ -33,6 +34,12 @@ type Client struct {
 type expandable struct {
 	Client   *Client `json:"-"`
 	expanded bool
+}
+
+// Validator types have a Validate method which is called before posting the
+// data to the API
+type Validator interface {
+	Validate() error
 }
 
 // NewClient instantiates a new Asana client with the given HTTP client and
@@ -92,7 +99,7 @@ func mergeQuery(q url.Values, request interface{}) error {
 	return nil
 }
 
-func (c *Client) get(path string, request, result interface{}, opts ...*Options) error {
+func (c *Client) get(path string, data, result interface{}, opts ...*Options) error {
 
 	// Encode default options
 	if c.Debug {
@@ -103,12 +110,20 @@ func (c *Client) get(path string, request, result interface{}, opts ...*Options)
 		return fmt.Errorf("Unable to marshal DefaultOptions to query parameters: %s", err)
 	}
 
-	// Encode request
-	if request != nil {
+	// Encode data
+	if data != nil {
 		if c.Debug {
-			log.Printf("Request: %+v", request)
+			log.Printf("Data: %+v", data)
 		}
-		if err := mergeQuery(q, request); err != nil {
+
+		// Validate
+		if validator, ok := data.(Validator); ok {
+			if err := validator.Validate(); err != nil {
+				return err
+			}
+		}
+
+		if err := mergeQuery(q, data); err != nil {
 			return err
 		}
 	}
@@ -148,6 +163,13 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 	}
 	if err := mergo.Merge(options, c.DefaultOptions); err != nil {
 		return fmt.Errorf("unable to merge options: %s", err)
+	}
+
+	// Validate data
+	if validator, ok := data.(Validator); ok {
+		if err := validator.Validate(); err != nil {
+			return err
+		}
 	}
 
 	// Build request
@@ -221,7 +243,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
 	}
 
 	// Inject the client into expandable types
-	injectClient(c, result)
+	c.inject(result)
 
 	return nil
 

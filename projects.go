@@ -83,6 +83,8 @@ type Project struct {
 
 // Project looks up a single Project record by ID
 func (c *Client) Project(id int64) (*Project, error) {
+	c.trace("Loading project %d", id)
+
 	result := &Project{}
 	result.expanded = true
 
@@ -93,6 +95,8 @@ func (c *Client) Project(id int64) (*Project, error) {
 
 // Projects returns a list of projects in this workspace
 func (w *Workspace) Projects() ([]*Project, error) {
+	w.trace("Listing projects in %q", w.Name)
+
 	var result []*Project
 
 	// Make the request
@@ -102,6 +106,8 @@ func (w *Workspace) Projects() ([]*Project, error) {
 
 // CreateProject adds a new project to a workspace
 func (c *Client) CreateProject(project *NewProject) (*Project, error) {
+	c.info("Creating project %q\n", project.Name)
+
 	result := &Project{}
 	result.expanded = true
 

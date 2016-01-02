@@ -19,7 +19,8 @@ var options struct {
 	Project   int64 `long:"project" short:"p" description:"Project to access"`
 	Task      int64 `long:"task" short:"t" description:"Task to access"`
 
-	Debug bool `short:"d" long:"debug" description:"Show debug information"`
+	Debug   bool   `short:"d" long:"debug" description:"Show debug information"`
+	Verbose []bool `short:"v" long:"verbose" description:"Show verbose output"`
 }
 
 func authenticate(req *http.Request) (*url.URL, error) {
@@ -48,6 +49,7 @@ func main() {
 		client.Debug = true
 		client.DefaultOptions.Pretty = true
 	}
+	client.Verbose = options.Verbose
 
 	// Load a task object
 	if options.Task == 0 {
