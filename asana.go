@@ -30,18 +30,6 @@ type Client struct {
 	DefaultOptions Options
 }
 
-// Marks whether an object is partially loaded
-type expandable struct {
-	Client   *Client `json:"-"`
-	expanded bool
-}
-
-// Validator types have a Validate method which is called before posting the
-// data to the API
-type Validator interface {
-	Validate() error
-}
-
 // NewClient instantiates a new Asana client with the given HTTP client and
 // the default base URL
 func NewClient(httpClient *http.Client) *Client {

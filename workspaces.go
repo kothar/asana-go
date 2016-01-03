@@ -19,10 +19,8 @@ import (
 // announcements, you can still reference organizations in any workspace
 // parameter.
 type Workspace struct {
-	HasID
-	HasName
-
 	expandable
+	WithName
 
 	// Whether the workspace is an organization.
 	IsOrganization bool `json:"is_organization,omitempty"`
@@ -33,15 +31,11 @@ type Workspace struct {
 	cachedTags map[string]*Tag
 }
 
-// Workspace looks up a single Workspace record by ID
-func (c *Client) Workspace(id int64) (*Workspace, error) {
-	c.trace("Loading workspace %d", id)
+// Workspace creates an unexpanded Workspace object with the given ID
+func (c *Client) Workspace(id int64) *Workspace {
 	result := &Workspace{}
-	result.expanded = true
-
-	// Make the request
-	err := c.get(fmt.Sprintf("/workspaces/%d", id), nil, &result)
-	return result, err
+	result.init(id, c)
+	return result
 }
 
 // Expand loads the full details for this Workspace
@@ -52,13 +46,7 @@ func (w *Workspace) Expand() error {
 		return nil
 	}
 
-	e, err := w.Client.Workspace(w.ID)
-	if err != nil {
-		return err
-	}
-
-	*w = *e
-	return nil
+	return w.Client.get(fmt.Sprintf("/workspaces/%d", w.ID), nil, w)
 }
 
 // Workspaces returns workspaces and organizations accessible to the currently

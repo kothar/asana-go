@@ -15,9 +15,9 @@ type ProjectStatus struct {
 
 // ProjectBase contains the parts of Project which are not related to a specific instance
 type ProjectBase struct {
-	HasName
-	HasNotes
-	HasColor
+	WithName
+	WithNotes
+	WithColor
 
 	// The current owner of the project, may be null.
 	Owner *User `json:"owner,omitempty"`
@@ -68,29 +68,33 @@ type NewProject struct {
 // project will add them as members if they are not already, removing
 // followers from a project will not affect membership.
 type Project struct {
+	expandable
 	ProjectBase
 
-	HasID
-	HasDates
-	HasWorkspace
-	HasFollowers
+	WithDates
+	WithWorkspace
+	WithFollowers
 
 	// Read-only. Array of users who are members of this project.
 	Members []*User `json:"members,omitempty"`
-
-	expandable
 }
 
-// Project looks up a single Project record by ID
-func (c *Client) Project(id int64) (*Project, error) {
-	c.trace("Loading project %d", id)
-
+// Project creates an unexpaned Project object with the given ID
+func (c *Client) Project(id int64) *Project {
 	result := &Project{}
-	result.expanded = true
+	result.init(id, c)
+	return result
+}
 
-	// Make the request
-	err := c.get(fmt.Sprintf("/projects/%d", id), nil, result)
-	return result, err
+// Expand loads the full details for this Project
+func (p *Project) Expand() error {
+	p.trace("Loading project details for %q", p.Name)
+
+	if p.expanded {
+		return nil
+	}
+
+	return p.Client.get(fmt.Sprintf("/projects/%d", p.ID), nil, p)
 }
 
 // Projects returns a list of projects in this workspace

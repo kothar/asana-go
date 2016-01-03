@@ -76,8 +76,8 @@ type ExternalData struct {
 
 // TaskBase contains the modifiable fields for the Task object
 type TaskBase struct {
-	HasName
-	HasNotes
+	WithName
+	WithNotes
 
 	// User to which this task is assigned, or null if the task is unassigned.
 	Assignee *User `json:"assignee,omitempty"`
@@ -115,6 +115,10 @@ func (t *TaskBase) Validate() error {
 	if t.Assignee == nil {
 		t.AssigneeStatus = ""
 	}
+
+	if t.DueAt != nil {
+		t.DueOn = nil
+	}
 	return nil
 }
 
@@ -144,16 +148,14 @@ type NewTask struct {
 // the fields? Use field selectors to manipulate what data is included in a
 // response.
 type Task struct {
+	expandable
 	TaskBase
 
-	HasID
-	HasParent
-	HasDates
-	HasWorkspace
-	HasHearts
-	HasFollowers
-
-	expandable
+	WithParent
+	WithDates
+	WithWorkspace
+	WithHearts
+	WithFollowers
 
 	// Read-only. The time at which this task was completed, or null if the
 	// task is incomplete.
@@ -179,14 +181,11 @@ type Task struct {
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
-// Task retrieves a task record by ID
-func (c *Client) Task(id int64) (*Task, error) {
-	c.trace("Loading task %d", id)
+// Task creates an unexpanded Task object with the given ID
+func (c *Client) Task(id int64) *Task {
 	result := &Task{}
-	result.expanded = true
-
-	err := c.get(fmt.Sprintf("/tasks/%d", id), nil, result)
-	return result, err
+	result.init(id, c)
+	return result
 }
 
 // Expand loads the full details for this Task
@@ -197,13 +196,7 @@ func (t *Task) Expand() error {
 		return nil
 	}
 
-	e, err := t.Client.Task(t.ID)
-	if err != nil {
-		return err
-	}
-
-	*t = *e
-	return nil
+	return t.Client.get(fmt.Sprintf("/tasks/%d", t.ID), nil, t)
 }
 
 // Tasks returns a list of tasks in this project

@@ -6,9 +6,9 @@ import (
 
 // TagBase contains the modifiable fields for a Tag
 type TagBase struct {
-	HasName
-	HasNotes
-	HasColor
+	WithName
+	WithNotes
+	WithColor
 }
 
 // Tag is a label that can be attached to any task in Asana. It exists in a
@@ -19,26 +19,19 @@ type TagBase struct {
 // heavily on it. Unlike projects, tags do not provide any ordering on the
 // tasks they are associated with.
 type Tag struct {
+	expandable
 	TagBase
 
-	HasID
-	HasCreated
-	HasWorkspace
-	HasFollowers
-
-	expandable
+	WithCreated
+	WithWorkspace
+	WithFollowers
 }
 
 // Tag retrieves a tag record by ID
-func (c *Client) Tag(id int64) (*Tag, error) {
-	c.trace("Loading tag %d", id)
-
+func (c *Client) Tag(id int64) *Tag {
 	result := &Tag{}
-	result.expanded = true
-
-	// Make the request
-	err := c.get(fmt.Sprintf("/tags/%d", id), nil, result)
-	return result, err
+	result.init(id, c)
+	return result
 }
 
 // Expand loads the full details for this Tag
@@ -49,13 +42,7 @@ func (t *Tag) Expand() error {
 		return nil
 	}
 
-	e, err := t.Client.Tag(t.ID)
-	if err != nil {
-		return err
-	}
-
-	*t = *e
-	return nil
+	return t.Client.get(fmt.Sprintf("/tags/%d", t.ID), nil, t)
 }
 
 // Tags returns a list of tags in this workspace

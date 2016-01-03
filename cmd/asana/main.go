@@ -63,22 +63,20 @@ func main() {
 				return
 			}
 
-			workspace, err := client.Workspace(options.Workspace)
-			check(err)
+			workspace := client.Workspace(options.Workspace)
 
 			check(util.ListProjects(workspace))
 			return
 		}
 
-		project, err := client.Project(options.Project)
-		check(err)
+		project := client.Project(options.Project)
 
 		check(util.ListTasks(project))
 		return
 	}
 
-	task, err := client.Task(options.Task)
-	check(err)
+	task := client.Task(options.Task)
+	check(task.Expand())
 
 	fmt.Printf("Task %d: %s\n", task.ID, task.Name)
 	fmt.Printf("  Completed: %v\n", task.Completed)

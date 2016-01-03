@@ -24,13 +24,11 @@ type StoryBase struct {
 // Stories are a form of history in the system, and as such they are read-
 // only. Once generated, it is not possible to modify a story.
 type Story struct {
+	expandable
 	StoryBase
 
-	HasID
-	HasCreated
-	HasHearts
-
-	expandable
+	WithCreated
+	WithHearts
 
 	// The user who created the story.
 	CreatedBy *User `json:"created_by,omitempty"`

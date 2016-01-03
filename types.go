@@ -35,33 +35,62 @@ func (d *Date) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// HasID is a mixin for objects with an ID
-type HasID struct {
+// WithID is a mixin for objects with an ID
+type WithID struct {
 	// Read-only. Globally unique ID of the object
 	ID int64 `json:"id,omitempty"`
 }
 
-// HasName is a mixin for objects with a human-readable name
-type HasName struct {
+// HasID objects have int64 IDs
+type HasID interface {
+	GetID() int64
+}
+
+// GetID returns the ID of an object
+func (a *WithID) GetID() int64 {
+	return a.ID
+}
+
+// Marks whether an object is partially loaded
+type expandable struct {
+	WithID
+
+	Client   *Client `json:"-"`
+	expanded bool
+}
+
+func (e *expandable) init(id int64, c *Client) {
+	e.ID = id
+	e.Client = c
+}
+
+// Validator types have a Validate method which is called before posting the
+// data to the API
+type Validator interface {
+	Validate() error
+}
+
+// WithName is a mixin for objects with a human-readable name
+type WithName struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
 }
 
-// HasParent is a mixin for objects which are children of a Task object
-type HasParent struct {
+// WithParent is a mixin for objects which are children of a Task object
+type WithParent struct {
 	// Read-only. The task this object is attached to.
 	Parent *Task `json:"parent,omitempty"`
 }
 
-// HasCreated is a mixin for objects with a creation date
-type HasCreated struct {
+// WithCreated is a mixin for objects with a creation date
+type WithCreated struct {
 	// Read-only. The time at which this object was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
-// HasDates is a mixin for objects with creation and modification dates
-type HasDates struct {
-	HasCreated
+// WithDates is a mixin for objects with creation and modification dates
+type WithDates struct {
+	WithCreated
 
 	// Read-only. The time at which this object was last modified.
 	//
@@ -71,23 +100,23 @@ type HasDates struct {
 	ModifiedAt *time.Time `json:"modified_at,omitempty"`
 }
 
-// HasNotes is a mixin for objects with notes attached
-type HasNotes struct {
+// WithNotes is a mixin for objects with notes attached
+type WithNotes struct {
 	// More detailed, free-form textual information associated with the
 	// object.
 	Notes string `json:"notes,omitempty"`
 }
 
-// HasWorkspace is a mixin for objects which define the workspace they belong to
-type HasWorkspace struct {
+// WithWorkspace is a mixin for objects which define the workspace they belong to
+type WithWorkspace struct {
 	// Create-only. The workspace or organization this object is associated
 	// with. Once created, objects cannot be moved to a different workspace.
 	// This attribute can only be specified at creation time.
 	Workspace *Workspace `json:"workspace,omitempty"`
 }
 
-// HasHearts is a mixin for objects which may be 'hearted'
-type HasHearts struct {
+// WithHearts is a mixin for objects which may be 'hearted'
+type WithHearts struct {
 	// True if the object is hearted by the authorized user, false if not.
 	Hearted bool `json:"hearted,omitempty"`
 
@@ -98,8 +127,8 @@ type HasHearts struct {
 	NumHearts int32 `json:"num_hearts,omitempty"`
 }
 
-// HasFollowers is a mixin for objects which may have followers
-type HasFollowers struct {
+// WithFollowers is a mixin for objects which may have followers
+type WithFollowers struct {
 	// Read-only. Array of users following this project. Followers are a
 	// subset of members who receive all notifcations for a project, the
 	// default notification setting when adding members to a project in-
@@ -107,8 +136,8 @@ type HasFollowers struct {
 	Followers []*User `json:"followers,omitempty"`
 }
 
-// HasColor is a mixin for objects with a color field
-type HasColor struct {
+// WithColor is a mixin for objects with a color field
+type WithColor struct {
 	// Color of the object. Must be either null or one of: dark-pink, dark-
 	// green, dark-blue, dark-red, dark-teal, dark-brown, dark-orange, dark-
 	// purple, dark-warm-gray, light-pink, light-green, light-blue, light-red,
@@ -173,12 +202,10 @@ type Options struct {
 // whether it’s an uploaded file or one associated via a third-party service
 // such as Dropbox or Google Drive.
 type Attachment struct {
-	HasID
-	HasName
-	HasParent
-	HasCreated
-
 	expandable
+	WithName
+	WithParent
+	WithCreated
 
 	// Read-only. The URL containing the content of the attachment.
 	//
@@ -201,8 +228,6 @@ type Attachment struct {
 // Team is used to group related projects and people together within an
 // organization. Each project in an organization is associated with a team.
 type Team struct {
-	HasID
-	HasName
-
 	expandable
+	WithName
 }
