@@ -24,6 +24,7 @@ const (
 type Client struct {
 	BaseURL    *url.URL
 	HTTPClient *http.Client
+	Cache      Cache
 
 	Debug          bool
 	Verbose        []bool
@@ -50,17 +51,6 @@ type request struct {
 type response struct {
 	Data   json.RawMessage `json:"data"`
 	Errors []*Error        `json:"errors"`
-}
-
-// Error is an error message returned by the API
-type Error struct {
-	Message string `json:"message"`
-	Phrase  string `json:"phrase"`
-	Help    string `json:"help"`
-}
-
-func (err Error) Error() string {
-	return err.Message
 }
 
 func (c *Client) getURL(path string) string {
@@ -125,7 +115,15 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) er
 			return err
 		}
 	}
-	path = path + "?" + q.Encode()
+	if len(q) > 0 {
+		path = path + "?" + q.Encode()
+	}
+
+	// Check cache
+	cachedData := c.getCached(path)
+	if cachedData != nil {
+		return c.parseResponseData(cachedData, result)
+	}
 
 	// Make request
 	if c.Debug {
@@ -136,7 +134,16 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) er
 		return fmt.Errorf("GET error: %s", err)
 	}
 
-	return c.parseResponse(resp, result)
+	// Parse the result
+	resultData, err := c.parseResponse(resp, result)
+	if err != nil {
+		return err
+	}
+
+	// Add to cache
+	c.cache(path, resultData)
+
+	return err
 }
 
 func (c *Client) post(path string, data, result interface{}, opts ...*Options) error {
@@ -182,16 +189,17 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 		return fmt.Errorf("POST error: %s", err)
 	}
 
-	return c.parseResponse(resp, result)
+	_, err = c.parseResponse(resp, result)
+	return err
 }
 
-func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
+func (c *Client) parseResponse(resp *http.Response, result interface{}) ([]byte, error) {
 
 	// Get response body
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if c.Debug {
 		log.Printf("%s\n%s", resp.Status, body)
@@ -200,33 +208,35 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
 	// Decode the response
 	value := &response{}
 	if err := json.Unmarshal(body, value); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check for errors
 	switch resp.StatusCode {
 	case 200: // OK
 	case 201: // Object created
-		// TODO cache the response based on the Location header
+		// Cache the response based on the Location header
+		if loc := resp.Header.Get("Location"); loc != "" {
+			c.cache(loc, value.Data)
+		}
 	case 401:
-		if value.Errors != nil {
-			return fmt.Errorf("Authorization error: %s", value.Errors[0])
-		}
-
-		return fmt.Errorf("Authorization error: Status %d", resp.StatusCode)
+		return nil, value.Error(resp.StatusCode, "Authorization")
+	case 404:
+		return nil, value.Error(resp.StatusCode, "Not Found")
 	default:
-		if value.Errors != nil {
-			return fmt.Errorf("API error: %s", value.Errors[0])
-		}
-
-		return fmt.Errorf("Unexpected error: Status %d", resp.StatusCode)
+		return nil, value.Error(resp.StatusCode, resp.Status)
 	}
 
 	// Decode the data field
 	if value.Data == nil {
-		return fmt.Errorf("Missing data from response")
+		return nil, fmt.Errorf("Missing data from response")
 	}
-	if err := json.Unmarshal(value.Data, result); err != nil {
+
+	return value.Data, c.parseResponseData(value.Data, result)
+}
+
+func (c *Client) parseResponseData(data []byte, result interface{}) error {
+	if err := json.Unmarshal(data, result); err != nil {
 		return err
 	}
 
@@ -234,5 +244,4 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) error {
 	c.inject(result)
 
 	return nil
-
 }

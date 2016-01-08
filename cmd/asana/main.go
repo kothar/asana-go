@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/jessevdk/go-flags"
 
@@ -15,9 +16,9 @@ import (
 var options struct {
 	Token string `long:"token" description:"Personal Access Token used to authorize access to the API" env:"ASANA_TOKEN" required:"true"`
 
-	Workspace int64 `long:"workspace" short:"w" description:"Workspace to access"`
-	Project   int64 `long:"project" short:"p" description:"Project to access"`
-	Task      int64 `long:"task" short:"t" description:"Task to access"`
+	Workspace []int64 `long:"workspace" short:"w" description:"Workspace to access"`
+	Project   []int64 `long:"project" short:"p" description:"Project to access"`
+	Task      []int64 `long:"task" short:"t" description:"Task to access"`
 
 	Debug   bool   `short:"d" long:"debug" description:"Show debug information"`
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose output"`
@@ -51,47 +52,56 @@ func main() {
 	}
 	client.Verbose = options.Verbose
 
+	cache, err := asana.NewMapCache(time.Minute * 5)
+	check(err)
+	client.Cache = cache
+
 	// Load a task object
-	if options.Task == 0 {
+	if options.Task == nil {
 
 		// Load a project object
-		if options.Project == 0 {
+		if options.Project == nil {
 
 			// Load a workspace object
-			if options.Workspace == 0 {
+			if options.Workspace == nil {
 				check(util.ListWorkspaces(client))
 				return
 			}
 
-			workspace := client.Workspace(options.Workspace)
-
-			check(util.ListProjects(workspace))
+			for _, w := range options.Workspace {
+				workspace := client.Workspace(w)
+				check(util.ListProjects(workspace))
+			}
 			return
 		}
 
-		project := client.Project(options.Project)
+		for _, p := range options.Project {
+			project := client.Project(p)
 
-		check(util.ListTasks(project))
+			check(util.ListTasks(project))
+		}
 		return
 	}
 
-	task := client.Task(options.Task)
-	check(task.Expand())
+	for _, t := range options.Task {
+		task := client.Task(t)
+		check(task.Expand())
 
-	fmt.Printf("Task %d: %s\n", task.ID, task.Name)
-	fmt.Printf("  Completed: %v\n", task.Completed)
-	if !task.Completed {
-		fmt.Printf("  Due: %s\n", task.DueAt)
-	}
-	if task.Notes != "" {
-		fmt.Printf("  Notes: %s\n", task.Notes)
-	}
+		fmt.Printf("Task %d: %s\n", task.ID, task.Name)
+		fmt.Printf("  Completed: %v\n", task.Completed)
+		if !task.Completed {
+			fmt.Printf("  Due: %s\n", task.DueAt)
+		}
+		if task.Notes != "" {
+			fmt.Printf("  Notes: %s\n", task.Notes)
+		}
 
-	// Get subtasks
-	subtasks, err := task.Subtasks()
-	check(err)
+		// Get subtasks
+		subtasks, err := task.Subtasks()
+		check(err)
 
-	for _, subtask := range subtasks {
-		fmt.Printf("  Subtask %d: %s\n", subtask.ID, subtask.Name)
+		for _, subtask := range subtasks {
+			fmt.Printf("  Subtask %d: %s\n", subtask.ID, subtask.Name)
+		}
 	}
 }
