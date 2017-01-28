@@ -13,7 +13,7 @@ type StoryBase struct {
 	// For example, text for a reassignment may not always say “assigned to
 	// …”. The API currently does not provide a structured way of inspecting
 	// the meaning of a story.
-	Text string `json:"text,omitempty"`
+	Text string `json:"text,omitempty" dynamo:"text"`
 }
 
 // Story represents an activity associated with an object in the Asana
@@ -31,25 +31,25 @@ type Story struct {
 	WithHearts
 
 	// The user who created the story.
-	CreatedBy *User `json:"created_by,omitempty"`
+	CreatedBy *User `json:"created_by,omitempty" dynamo:"created_by"`
 
 	// Read-only. HTML formatted text for a comment. This will not include the
 	// name of the creator.
 	//
 	// Note: This field is only returned if explicitly requested using the
 	// opt_fields query parameter.
-	HTMLText string `json:"html_text,omitempty"`
+	HTMLText string `json:"html_text,omitempty" dynamo:"html_text"`
 
 	// Read-only. The object this story is associated with. Currently may only
 	// be a task.
-	Target *Task `json:"target,omitempty"`
+	Target *Task `json:"target,omitempty" dynamo:"target"`
 
 	// Read-only. The component of the Asana product the user used to trigger
 	// the story.
-	Source string `json:"source,omitempty"`
+	Source string `json:"source,omitempty" dynamo:"source"`
 
 	// Read-only. The type of story this is.
-	Type string `json:"type,omitempty"`
+	Type string `json:"type,omitempty" dynamo:"type"`
 }
 
 // Stories lists all stories attached to a task

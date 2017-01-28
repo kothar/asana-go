@@ -40,8 +40,8 @@ type TaskQuery struct {
 // Membership describes projects a task is associated with and the section it
 // is in.
 type Membership struct {
-	Project *Project `json:"project,omitempty"`
-	Section *Task    `json:"section,omitempty"`
+	Project *Project `json:"project,omitempty" dynamo:"project"`
+	Section *Task    `json:"section,omitempty" dynamo:"section"`
 }
 
 // ExternalData allows a client application to add app-specific metadata to
@@ -70,8 +70,8 @@ type Membership struct {
 // can view the resource to which the data is attached, so this should not be
 // used for private user data.
 type ExternalData struct {
-	ID   string `json:"id,omitempty"`
-	Data string `json:"data,omitempty"`
+	ID   string `json:"id,omitempty" dynamo:"id"`
+	Data string `json:"data,omitempty" dynamo:"data"`
 }
 
 // TaskBase contains the modifiable fields for the Task object
@@ -80,24 +80,24 @@ type TaskBase struct {
 	WithNotes
 
 	// User to which this task is assigned, or null if the task is unassigned.
-	Assignee *User `json:"assignee,omitempty"`
+	Assignee *User `json:"assignee,omitempty" dynamo:"assignee"`
 
 	// Scheduling status of this task for the user it is assigned to. This
 	// field can only be set if the assignee is non-null.
-	AssigneeStatus string `json:"assignee_status,omitempty"`
+	AssigneeStatus string `json:"assignee_status,omitempty" dynamo:"assignee_status"`
 
 	// True if the task is currently marked complete, false if not.
-	Completed bool `json:"completed,omitempty"`
+	Completed bool `json:"completed,omitempty" dynamo:"completed"`
 
 	// Date on which this task is due, or null if the task has no due date.
 	// This takes a date with YYYY-MM-DD format and should not be used
 	// together with due_at.
-	DueOn *Date `json:"due_on,omitempty"`
+	DueOn *Date `json:"due_on,omitempty" dynamo:"due_on"`
 
 	// Date and time on which this task is due, or null if the task has no due
 	// time. This takes a UTC timestamp and should not be used together with
 	// due_on.
-	DueAt *time.Time `json:"due_at,omitempty"`
+	DueAt *time.Time `json:"due_at,omitempty" dynamo:"due_at"`
 
 	// Oauth Required. The external field allows you to store app-specific
 	// metadata on tasks, including an id that can be used to retrieve tasks
@@ -107,7 +107,7 @@ type TaskBase struct {
 	// external:custom_id to reference your object anywhere in the API where
 	// you may use the original object id. See the page on Custom External
 	// Data for more details.
-	External *ExternalData `json:"external,omitempty"`
+	External *ExternalData `json:"external,omitempty" dynamo:"external"`
 }
 
 // Validate checks the task data and fixes any problems
@@ -126,10 +126,10 @@ func (t *TaskBase) Validate() error {
 type NewTask struct {
 	TaskBase
 
-	Workspace int64   `json:"workspace,omitempty"`
-	Parent    int64   `json:"parent,omitempty"`
-	Projects  []int64 `json:"projects,omitempty"`
-	Tags      []int64 `json:"tags,omitempty"`
+	Workspace int64   `json:"workspace,omitempty" dynamo:"workspace"`
+	Parent    int64   `json:"parent,omitempty" dynamo:"parent"`
+	Projects  []int64 `json:"projects,omitempty" dynamo:"projects"`
+	Tags      []int64 `json:"tags,omitempty" dynamo:"tags"`
 }
 
 // Task is the basic object around which many operations in Asana are
@@ -159,13 +159,13 @@ type Task struct {
 
 	// Read-only. The time at which this task was completed, or null if the
 	// task is incomplete.
-	CompletedAt *time.Time `json:"completed_at,omitempty"`
+	CompletedAt *time.Time `json:"completed_at,omitempty" dynamo:"completed_at"`
 
 	// Create-only. Array of projects this task is associated with. At task
 	// creation time, this array can be used to add the task to many projects
 	// at once. After task creation, these associations can be modified using
 	// the addProject and removeProject endpoints.
-	Projects []*Project `json:"projects,omitempty"`
+	Projects []*Project `json:"projects,omitempty" dynamo:"projects"`
 
 	// Create-only. Array of projects this task is associated with and the
 	// section it is in. At task creation time, this array can be used to add
@@ -173,12 +173,12 @@ type Task struct {
 	// can be modified using the addProject and removeProject endpoints. Note
 	// that over time, more types of memberships may be added to this
 	// property.
-	Memberships []*Membership `json:"memberships,omitempty"`
+	Memberships []*Membership `json:"memberships,omitempty" dynamo:"memberships"`
 
 	// Create-only. Array of tags associated with this task. This property may
 	// be specified on creation using just an array of tag IDs. In order to
 	// change tags on an existing task use addTag and removeTag.
-	Tags []*Tag `json:"tags,omitempty"`
+	Tags []*Tag `json:"tags,omitempty" dynamo:"tags"`
 }
 
 // Task creates an unexpanded Task object with the given ID

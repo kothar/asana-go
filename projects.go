@@ -8,9 +8,9 @@ import (
 // (must be either null or one of: green, yellow, red) and a short
 // description.
 type ProjectStatus struct {
-	Color  string `json:"color,omitempty"`
-	Text   string `json:"text,omitempty"`
-	Author *User  `json:"author,omitempty"`
+	Color  string `json:"color,omitempty" dynamo:"color"`
+	Text   string `json:"text,omitempty" dynamo:"text"`
+	Author *User  `json:"author,omitempty" dynamo:"author"`
 }
 
 // ProjectBase contains the parts of Project which are not related to a specific instance
@@ -20,36 +20,36 @@ type ProjectBase struct {
 	WithColor
 
 	// The current owner of the project, may be null.
-	Owner *User `json:"owner,omitempty"`
+	Owner *User `json:"owner,omitempty" dynamo:"owner"`
 
 	// A description of the project’s status containing a color (must be
 	// either null or one of: green, yellow, red) and a short description.
-	CurrentStatus *ProjectStatus `json:"current_status,omitempty"`
+	CurrentStatus *ProjectStatus `json:"current_status,omitempty" dynamo:"current_status"`
 
 	// The day on which this project is due. This takes a date with format
 	// YYYY-MM-DD.
-	DueDate *Date `json:"due_date,omitempty"`
+	DueDate *Date `json:"due_date,omitempty" dynamo:"due_date"`
 
 	// True if the project is archived, false if not. Archived projects do not
 	// show in the UI by default and may be treated differently for queries.
-	Archived bool `json:"archived,omitempty"`
+	Archived bool `json:"archived,omitempty" dynamo:"archived"`
 
 	// True if the project is public to the organization. If false, do not
 	// share this project with other users in this organization without
 	// explicitly checking to see if they have access.
-	Public bool `json:"public,omitempty"`
+	Public bool `json:"public,omitempty" dynamo:"public"`
 
 	// Create-only. The team that this project is shared with. This field only
 	// exists for projects in organizations.
-	Team *Team `json:"team,omitempty"`
+	Team *Team `json:"team,omitempty" dynamo:"team"`
 }
 
 // NewProject represents a request to create a new project
 type NewProject struct {
 	ProjectBase
 
-	Workspace int64 `json:"workspace,omitempty"`
-	Team      int64 `json:"team,omitempty"`
+	Workspace int64 `json:"workspace,omitempty" dynamo:"workspace"`
+	Team      int64 `json:"team,omitempty" dynamo:"team"`
 }
 
 // Project represents a prioritized list of tasks in Asana. It exists in a
@@ -76,7 +76,7 @@ type Project struct {
 	WithFollowers
 
 	// Read-only. Array of users who are members of this project.
-	Members []*User `json:"members,omitempty"`
+	Members []*User `json:"members,omitempty" dynamo:"members"`
 }
 
 // Project creates an unexpaned Project object with the given ID
