@@ -19,7 +19,7 @@ import (
 // announcements, you can still reference organizations in any workspace
 // parameter.
 type Workspace struct {
-	expandable
+	Expandable
 	WithName
 
 	// Whether the workspace is an organization.
@@ -46,7 +46,7 @@ func (w *Workspace) Expand() error {
 		return nil
 	}
 
-	return w.Client.get(fmt.Sprintf("/workspaces/%d", w.ID), nil, w)
+	return w.client.get(fmt.Sprintf("/workspaces/%d", w.ID), nil, w)
 }
 
 // Workspaces returns workspaces and organizations accessible to the currently

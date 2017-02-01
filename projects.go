@@ -68,7 +68,7 @@ type NewProject struct {
 // project will add them as members if they are not already, removing
 // followers from a project will not affect membership.
 type Project struct {
-	expandable
+	Expandable
 	ProjectBase
 
 	WithDates
@@ -94,7 +94,7 @@ func (p *Project) Expand() error {
 		return nil
 	}
 
-	return p.Client.get(fmt.Sprintf("/projects/%d", p.ID), nil, p)
+	return p.client.get(fmt.Sprintf("/projects/%d", p.ID), nil, p)
 }
 
 // Projects returns a list of projects in this workspace
@@ -104,7 +104,7 @@ func (w *Workspace) Projects() ([]*Project, error) {
 	var result []*Project
 
 	// Make the request
-	err := w.Client.get(fmt.Sprintf("/workspaces/%d/projects", w.ID), nil, &result)
+	err := w.client.get(fmt.Sprintf("/workspaces/%d/projects", w.ID), nil, &result)
 	return result, err
 }
 

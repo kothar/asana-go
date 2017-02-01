@@ -52,16 +52,24 @@ func (a *WithID) GetID() int64 {
 }
 
 // Marks whether an object is partially loaded
-type expandable struct {
+type Expandable struct {
 	WithID
 
-	Client   *Client `json:"-" dynamo:"-"`
+	client   *Client
 	expanded bool
 }
 
-func (e *expandable) init(id int64, c *Client) {
+func (e *Expandable) init(id int64, c *Client) {
 	e.ID = id
-	e.Client = c
+	e.client = c
+}
+
+func (e *Expandable) Client() *Client {
+	return e.client
+}
+
+func (e *Expandable) SetClient(c *Client) {
+	e.client = c
 }
 
 // Validator types have a Validate method which is called before posting the
@@ -202,7 +210,7 @@ type Options struct {
 // whether it’s an uploaded file or one associated via a third-party service
 // such as Dropbox or Google Drive.
 type Attachment struct {
-	expandable
+	Expandable
 	WithName
 	WithParent
 	WithCreated
@@ -228,6 +236,6 @@ type Attachment struct {
 // Team is used to group related projects and people together within an
 // organization. Each project in an organization is associated with a team.
 type Team struct {
-	expandable
+	Expandable
 	WithName
 }

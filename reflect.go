@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var expandableType = reflect.TypeOf(expandable{})
+var expandableType = reflect.TypeOf(Expandable{})
 
 // Populates expandable objects with a reference to the current client.
 // Object graph must not contain cycles, or an infinite loop will occur.
@@ -39,8 +39,8 @@ func (c *Client) injectClientValue(clientValue, value reflect.Value) {
 		}
 
 		if value.Type() == expandableType {
-			clientField := value.FieldByName("Client")
-			clientField.Set(clientValue)
+			exp := value.Interface().(Expandable)
+			exp.client = clientValue.Interface().(*Client)
 		}
 	}
 

@@ -7,7 +7,7 @@ package asana
 // However, the special string identifier me can be used anywhere a user ID is
 // accepted, to refer to the current authenticated user.
 type User struct {
-	expandable
+	Expandable
 	WithName
 
 	// Read-only. The user’s email address.

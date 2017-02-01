@@ -19,7 +19,7 @@ type TagBase struct {
 // heavily on it. Unlike projects, tags do not provide any ordering on the
 // tasks they are associated with.
 type Tag struct {
-	expandable
+	Expandable
 	TagBase
 
 	WithCreated
@@ -42,7 +42,7 @@ func (t *Tag) Expand() error {
 		return nil
 	}
 
-	return t.Client.get(fmt.Sprintf("/tags/%d", t.ID), nil, t)
+	return t.client.get(fmt.Sprintf("/tags/%d", t.ID), nil, t)
 }
 
 // Tags returns a list of tags in this workspace
@@ -56,7 +56,7 @@ func (w *Workspace) Tags() (map[string]*Tag, error) {
 	var result []*Tag
 
 	// Make the request
-	err := w.Client.get(fmt.Sprintf("/workspaces/%d/tags", w.ID), nil, &result)
+	err := w.client.get(fmt.Sprintf("/workspaces/%d/tags", w.ID), nil, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (w *Workspace) CreateTag(tag *TagBase) (*Tag, error) {
 	result := &Tag{}
 	result.expanded = true
 
-	err := w.Client.post(fmt.Sprintf("/workspaces/%d/tags", w.ID), tag, result)
+	err := w.client.post(fmt.Sprintf("/workspaces/%d/tags", w.ID), tag, result)
 	if err != nil {
 		return nil, err
 	}

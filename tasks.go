@@ -148,7 +148,7 @@ type NewTask struct {
 // the fields? Use field selectors to manipulate what data is included in a
 // response.
 type Task struct {
-	expandable
+	Expandable
 	TaskBase
 
 	WithParent
@@ -196,7 +196,7 @@ func (t *Task) Expand() error {
 		return nil
 	}
 
-	return t.Client.get(fmt.Sprintf("/tasks/%d", t.ID), nil, t)
+	return t.client.get(fmt.Sprintf("/tasks/%d", t.ID), nil, t)
 }
 
 // Tasks returns a list of tasks in this project
@@ -205,7 +205,7 @@ func (p *Project) Tasks(opts ...*Options) ([]*Task, error) {
 	var result []*Task
 
 	// Make the request
-	err := p.Client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result, opts...)
+	err := p.client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result, opts...)
 	return result, err
 }
 
@@ -216,7 +216,7 @@ func (t *Task) Subtasks(opts ...*Options) ([]*Task, error) {
 	var result []*Task
 
 	// Make the request
-	err := t.Client.get(fmt.Sprintf("/tasks/%d/subtasks", t.ID), nil, &result, opts...)
+	err := t.client.get(fmt.Sprintf("/tasks/%d/subtasks", t.ID), nil, &result, opts...)
 	return result, err
 }
 
@@ -238,7 +238,7 @@ func (t *Task) CreateSubtask(task *Task) (*Task, error) {
 	result := &Task{}
 	result.expanded = true
 
-	err := t.Client.post(fmt.Sprintf("/tasks/%d/subtasks", t.ID), task, result)
+	err := t.client.post(fmt.Sprintf("/tasks/%d/subtasks", t.ID), task, result)
 	return result, err
 }
 

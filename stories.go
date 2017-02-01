@@ -24,7 +24,7 @@ type StoryBase struct {
 // Stories are a form of history in the system, and as such they are read-
 // only. Once generated, it is not possible to modify a story.
 type Story struct {
-	expandable
+	Expandable
 	StoryBase
 
 	WithCreated
@@ -59,7 +59,7 @@ func (t *Task) Stories(opts ...*Options) ([]*Story, error) {
 	var result []*Story
 
 	// Make the request
-	err := t.Client.get(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, &result, opts...)
+	err := t.client.get(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, &result, opts...)
 	return result, err
 }
 
@@ -70,6 +70,6 @@ func (t *Task) CreateComment(story *StoryBase) (*Story, error) {
 	result := &Story{}
 	result.expanded = true
 
-	err := t.Client.post(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, result)
+	err := t.client.post(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, result)
 	return result, err
 }
