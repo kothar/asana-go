@@ -27,6 +27,7 @@ type Client struct {
 
 	Debug          bool
 	Verbose        []bool
+	FastAPI        bool
 	DefaultOptions Options
 }
 
@@ -36,6 +37,7 @@ func NewClient(httpClient *http.Client) *Client {
 	u, _ := url.Parse(BaseURL)
 	return &Client{
 		BaseURL:    u,
+		FastAPI:    true,
 		HTTPClient: httpClient,
 	}
 }
@@ -129,7 +131,14 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	if c.Debug {
 		log.Printf("GET %s", path)
 	}
-	resp, err := c.HTTPClient.Get(c.getURL(path))
+	request, err := http.NewRequest(http.MethodGet, c.getURL(path), nil)
+	if err != nil {
+		return nil, fmt.Errorf("Request error: %s", err)
+	}
+	if c.FastAPI {
+		request.Header.Add("Asana-Fast-Api", "true")
+	}
+	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("GET error: %s", err)
 	}
@@ -181,7 +190,16 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 		body, _ := json.MarshalIndent(req, "", "  ")
 		log.Printf("POST %s\n%s", path, body)
 	}
-	resp, err := c.HTTPClient.Post(c.getURL(path), "application/json", bytes.NewReader(body))
+	request, err := http.NewRequest(http.MethodPost, c.getURL(path), bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("Request error: %s", err)
+	}
+
+	request.Header.Add("Body-Type", "application/json")
+	if c.FastAPI {
+		request.Header.Add("Asana-Fast-Api", "true")
+	}
+	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return fmt.Errorf("POST error: %s", err)
 	}
