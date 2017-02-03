@@ -24,7 +24,6 @@ const (
 type Client struct {
 	BaseURL    *url.URL
 	HTTPClient *http.Client
-	Cache      Cache
 
 	Debug          bool
 	Verbose        []bool
@@ -47,10 +46,17 @@ type request struct {
 	Options *Options    `json:"options,omitempty"`
 }
 
+type NextPage struct {
+	Offset string `json:"offset"`
+	Path   string `json:"path"`
+	URI    string `json:"uri"`
+}
+
 // An API response
-type response struct {
-	Data   json.RawMessage `json:"data"`
-	Errors []*Error        `json:"errors"`
+type Response struct {
+	Data     json.RawMessage `json:"data"`
+	NextPage *NextPage       `json:"next_page"`
+	Errors   []*Error        `json:"errors"`
 }
 
 func (c *Client) getURL(path string) string {
@@ -77,7 +83,7 @@ func mergeQuery(q url.Values, request interface{}) error {
 	return nil
 }
 
-func (c *Client) get(path string, data, result interface{}, opts ...*Options) error {
+func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*NextPage, error) {
 
 	// Encode default options
 	if c.Debug {
@@ -85,7 +91,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) er
 	}
 	q, err := query.Values(c.DefaultOptions)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal DefaultOptions to query parameters: %s", err)
+		return nil, fmt.Errorf("Unable to marshal DefaultOptions to query parameters: %s", err)
 	}
 
 	// Encode data
@@ -97,12 +103,12 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) er
 		// Validate
 		if validator, ok := data.(Validator); ok {
 			if err := validator.Validate(); err != nil {
-				return err
+				return nil, err
 			}
 		}
 
 		if err := mergeQuery(q, data); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -112,17 +118,11 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) er
 			log.Printf("Options: %+v", options)
 		}
 		if err := mergeQuery(q, options); err != nil {
-			return err
+			return nil, err
 		}
 	}
 	if len(q) > 0 {
 		path = path + "?" + q.Encode()
-	}
-
-	// Check cache
-	cachedData := c.getCached(path)
-	if cachedData != nil {
-		return c.parseResponseData(cachedData, result)
 	}
 
 	// Make request
@@ -131,19 +131,16 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) er
 	}
 	resp, err := c.HTTPClient.Get(c.getURL(path))
 	if err != nil {
-		return fmt.Errorf("GET error: %s", err)
+		return nil, fmt.Errorf("GET error: %s", err)
 	}
 
 	// Parse the result
 	resultData, err := c.parseResponse(resp, result)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Add to cache
-	c.cache(path, resultData)
-
-	return err
+	return resultData.NextPage, nil
 }
 
 func (c *Client) post(path string, data, result interface{}, opts ...*Options) error {
@@ -193,7 +190,7 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 	return err
 }
 
-func (c *Client) parseResponse(resp *http.Response, result interface{}) ([]byte, error) {
+func (c *Client) parseResponse(resp *http.Response, result interface{}) (*Response, error) {
 
 	// Get response body
 	defer resp.Body.Close()
@@ -206,7 +203,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) ([]byte,
 	}
 
 	// Decode the response
-	value := &response{}
+	value := &Response{}
 	if err := json.Unmarshal(body, value); err != nil {
 		return nil, err
 	}
@@ -215,10 +212,6 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) ([]byte,
 	switch resp.StatusCode {
 	case 200: // OK
 	case 201: // Object created
-		// Cache the response based on the Location header
-		if loc := resp.Header.Get("Location"); loc != "" {
-			c.cache(loc, value.Data)
-		}
 	case 401:
 		return nil, value.Error(resp.StatusCode, "Authorization")
 	case 404:
@@ -232,7 +225,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) ([]byte,
 		return nil, fmt.Errorf("Missing data from response")
 	}
 
-	return value.Data, c.parseResponseData(value.Data, result)
+	return value, c.parseResponseData(value.Data, result)
 }
 
 func (c *Client) parseResponseData(data []byte, result interface{}) error {

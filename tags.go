@@ -42,34 +42,19 @@ func (t *Tag) Expand() error {
 		return nil
 	}
 
-	return t.client.get(fmt.Sprintf("/tags/%d", t.ID), nil, t)
+	_, err := t.client.get(fmt.Sprintf("/tags/%d", t.ID), nil, t)
+	return err
 }
 
 // Tags returns a list of tags in this workspace
-func (w *Workspace) Tags() (map[string]*Tag, error) {
+func (w *Workspace) Tags() ([]*Tag, *NextPage, error) {
 	w.trace("Listing tags in %q", w.Name)
-
-	if w.cachedTags != nil {
-		return w.cachedTags, nil
-	}
 
 	var result []*Tag
 
 	// Make the request
-	err := w.client.get(fmt.Sprintf("/workspaces/%d/tags", w.ID), nil, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	// Index tags
-	tagMap := make(map[string]*Tag)
-	for _, tag := range result {
-		tagMap[tag.Name] = tag
-	}
-
-	// Cache result
-	w.cachedTags = tagMap
-	return tagMap, nil
+	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/tags", w.ID), nil, &result)
+	return result, nextPage, err
 }
 
 // CreateTag adds a new tag to a workspace
@@ -82,11 +67,6 @@ func (w *Workspace) CreateTag(tag *TagBase) (*Tag, error) {
 	err := w.client.post(fmt.Sprintf("/workspaces/%d/tags", w.ID), tag, result)
 	if err != nil {
 		return nil, err
-	}
-
-	// Update tag cache
-	if w.cachedTags != nil {
-		w.cachedTags[result.Name] = result
 	}
 
 	return result, nil

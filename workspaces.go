@@ -27,8 +27,6 @@ type Workspace struct {
 
 	// Undocumented in API docs
 	EmailDomains []string `json:"email_domains,omitempty" dynamo:"email_domains"`
-
-	cachedTags map[string]*Tag
 }
 
 // Workspace creates an unexpanded Workspace object with the given ID
@@ -46,19 +44,17 @@ func (w *Workspace) Expand() error {
 		return nil
 	}
 
-	return w.client.get(fmt.Sprintf("/workspaces/%d", w.ID), nil, w)
+	_, err := w.client.get(fmt.Sprintf("/workspaces/%d", w.ID), nil, w)
+	return err
 }
 
 // Workspaces returns workspaces and organizations accessible to the currently
 // authorized account
-func (c *Client) Workspaces() ([]*Workspace, error) {
+func (c *Client) Workspaces(options ...*Options) ([]*Workspace, *NextPage, error) {
 	c.trace("Listing workspaces...\n")
 	var result []*Workspace
 
-	// Force all fields to be shown
-	opts := Fields(Workspace{})
-
 	// Make the request
-	err := c.get("/workspaces", nil, &result, opts)
-	return result, err
+	nextPage, err := c.get("/workspaces", nil, &result, options...)
+	return result, nextPage, err
 }

@@ -196,28 +196,29 @@ func (t *Task) Expand() error {
 		return nil
 	}
 
-	return t.client.get(fmt.Sprintf("/tasks/%d", t.ID), nil, t)
+	_, err := t.client.get(fmt.Sprintf("/tasks/%d", t.ID), nil, t)
+	return err
 }
 
 // Tasks returns a list of tasks in this project
-func (p *Project) Tasks(opts ...*Options) ([]*Task, error) {
+func (p *Project) Tasks(opts ...*Options) ([]*Task, *NextPage, error) {
 	p.trace("Listing tasks in %q", p.Name)
 	var result []*Task
 
 	// Make the request
-	err := p.client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result, opts...)
-	return result, err
+	nextPage, err := p.client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result, opts...)
+	return result, nextPage, err
 }
 
 // Subtasks returns a list of tasks in this project
-func (t *Task) Subtasks(opts ...*Options) ([]*Task, error) {
+func (t *Task) Subtasks(opts ...*Options) ([]*Task, *NextPage, error) {
 	t.trace("Listing subtasks for %q", t.Name)
 
 	var result []*Task
 
 	// Make the request
-	err := t.client.get(fmt.Sprintf("/tasks/%d/subtasks", t.ID), nil, &result, opts...)
-	return result, err
+	nextPage, err := t.client.get(fmt.Sprintf("/tasks/%d/subtasks", t.ID), nil, &result, opts...)
+	return result, nextPage, err
 }
 
 // CreateTask creates a new task in the given project
@@ -243,9 +244,9 @@ func (t *Task) CreateSubtask(task *Task) (*Task, error) {
 }
 
 // QueryTasks finds matching tasks visible to the current client account
-func (c *Client) QueryTasks(query *TaskQuery) ([]*Task, error) {
+func (c *Client) QueryTasks(query *TaskQuery) ([]*Task, *NextPage, error) {
 	var result []*Task
 
-	err := c.get("/tasks", &result, query)
-	return result, err
+	nextPage, err := c.get("/tasks", &result, query)
+	return result, nextPage, err
 }

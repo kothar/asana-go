@@ -204,6 +204,18 @@ type Options struct {
 	// will be called with a single argument, a JavaScript object representing
 	// the response.
 	JSONP string `json:"jsonp,omitempty" url:"opt_jsonp,omitempty" dynamo:"jsonp"`
+
+	// The number of objects to return per page. The value must be between 1 and 100.
+	Limit int `json:"limit,omitempty" url:"limit,omitempty" dynamo:"limit"`
+
+	// An offset to the next page returned by the API. A pagination request
+	// will return an offset token, which can be used as an input parameter to
+	// the next request. If an offset is not passed in, the API will return
+	// the first page of results.
+	//
+	// Note: You can only pass in an offset that was returned to you via a
+	// previously paginated request.
+	Offset string `json:"offset,omitempty" url:"offset,omitempty" dynamo:"offset"`
 }
 
 // Attachment represents any file attached to a task in Asana,

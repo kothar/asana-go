@@ -30,7 +30,7 @@ func (c *Client) CurrentUser() (*User, error) {
 
 	result := &User{}
 
-	err := c.get("/users/me", nil, result)
+	_, err := c.get("/users/me", nil, result)
 
 	return result, err
 }

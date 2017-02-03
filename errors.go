@@ -1,6 +1,6 @@
 package asana
 
-func (r *response) Error(statusCode int, errorType string) error {
+func (r *Response) Error(statusCode int, errorType string) error {
 	if r.Errors != nil {
 		return r.Errors[0].withType(statusCode, errorType)
 	}

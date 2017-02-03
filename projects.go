@@ -94,18 +94,19 @@ func (p *Project) Expand() error {
 		return nil
 	}
 
-	return p.client.get(fmt.Sprintf("/projects/%d", p.ID), nil, p)
+	_, err := p.client.get(fmt.Sprintf("/projects/%d", p.ID), nil, p)
+	return err
 }
 
 // Projects returns a list of projects in this workspace
-func (w *Workspace) Projects() ([]*Project, error) {
+func (w *Workspace) Projects(options ...*Options) ([]*Project, *NextPage, error) {
 	w.trace("Listing projects in %q", w.Name)
 
 	var result []*Project
 
 	// Make the request
-	err := w.client.get(fmt.Sprintf("/workspaces/%d/projects", w.ID), nil, &result)
-	return result, err
+	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/projects", w.ID), nil, &result, options...)
+	return result, nextPage, err
 }
 
 // CreateProject adds a new project to a workspace

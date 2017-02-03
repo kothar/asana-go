@@ -53,14 +53,14 @@ type Story struct {
 }
 
 // Stories lists all stories attached to a task
-func (t *Task) Stories(opts ...*Options) ([]*Story, error) {
+func (t *Task) Stories(opts ...*Options) ([]*Story, *NextPage, error) {
 	t.trace("Listing stories for %q", t.Name)
 
 	var result []*Story
 
 	// Make the request
-	err := t.client.get(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, &result, opts...)
-	return result, err
+	nextPage, err := t.client.get(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, &result, opts...)
+	return result, nextPage, err
 }
 
 // CreateComment adds a comment story to a task
