@@ -187,7 +187,7 @@ type Options struct {
 	// return for the objects. The field names should be provided as paths,
 	// described below.   The id of included objects will always be returned,
 	// regardless of the field options.
-	Fields []string `json:"fields,omitempty" url:"opt_fields,omitempty" dynamo:"fields"`
+	Fields []string `json:"fields,omitempty" url:"opt_fields,omitempty,comma" dynamo:"fields"`
 
 	// Query results and sub-objects are returned in compact form by default.
 	// This option can be used to expand query results or sub-objects to
@@ -196,7 +196,7 @@ type Options struct {
 	// results in expanded form can be costly and return you a lot of data to
 	// consume. If the fields option is also used, it will take precedence
 	// over the expand option and prevent expansion.
-	Expand []string `json:"expand,omitempty" url:"opt_expand,omitempty" dynamo:"expand"`
+	Expand []string `json:"expand,omitempty" url:"opt_expand,omitempty,comma" dynamo:"expand"`
 
 	// Returns the output in JSON-P format instead of plain JSON, to allow
 	// requests to come from within browsers and work around the “same origin
