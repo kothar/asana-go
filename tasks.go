@@ -126,10 +126,11 @@ func (t *TaskBase) Validate() error {
 type NewTask struct {
 	TaskBase
 
-	Workspace int64   `json:"workspace,omitempty" dynamo:"workspace"`
-	Parent    int64   `json:"parent,omitempty" dynamo:"parent"`
-	Projects  []int64 `json:"projects,omitempty" dynamo:"projects"`
-	Tags      []int64 `json:"tags,omitempty" dynamo:"tags"`
+	// TODO CustomFields
+	Workspace int64   `json:"workspace,omitempty"`
+	Parent    int64   `json:"parent,omitempty"`
+	Projects  []int64 `json:"projects,omitempty"`
+	Tags      []int64 `json:"tags,omitempty"`
 }
 
 // Task is the basic object around which many operations in Asana are
@@ -160,6 +161,16 @@ type Task struct {
 	// Read-only. The time at which this task was completed, or null if the
 	// task is incomplete.
 	CompletedAt *time.Time `json:"completed_at,omitempty" dynamo:"completed_at"`
+
+	// Array of custom fields applied to the task. These custom fields
+	// represent the values recorded on this task for a particular custom
+	// field. For example, these fields will contain an enum_value property
+	// for custom fields of type enum, a string_value property for custom
+	// fields of type string, and so on. Please note that the id returned on
+	// each custom field value is identical to the id of the custom field,
+	// which allows referencing the custom field metadata through the
+	// /custom_fields/custom_field-id endpoint.
+	CustomFields []*CustomFieldValue `json:"custom_fields,omitempty" dynamo:"custom_fields"`
 
 	// Create-only. Array of projects this task is associated with. At task
 	// creation time, this array can be used to add the task to many projects
