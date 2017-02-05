@@ -23,10 +23,10 @@ type Workspace struct {
 	WithName
 
 	// Whether the workspace is an organization.
-	IsOrganization bool `json:"is_organization,omitempty" dynamo:"is_organization"`
+	IsOrganization bool `json:"is_organization,omitempty"`
 
 	// Undocumented in API docs
-	EmailDomains []string `json:"email_domains,omitempty" dynamo:"email_domains"`
+	EmailDomains []string `json:"email_domains,omitempty"`
 }
 
 // Workspace creates an unexpanded Workspace object with the given ID

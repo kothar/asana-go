@@ -1,10 +1,10 @@
 package asana
 
 type EnumValue struct {
-	ID      int    `json:"id" dynamo:"id"`
-	Name    string `json:"name" dynamo:"name"`
-	Enabled bool   `json:"enabled" dynamo:"enabled"`
-	Color   string `json:"color" dynamo:"color"`
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Enabled bool   `json:"enabled"`
+	Color   string `json:"color"`
 }
 
 // Custom Fields store the metadata that is used in order to add user-
@@ -19,16 +19,16 @@ type CustomField struct {
 
 	// The type of the custom field. Must be one of the given values:
 	// 'text', 'enum', 'number'
-	Type string `json:"type" dynamo:"type"`
+	Type string `json:"type"`
 
 	// Only relevant for custom fields of type ‘Enum’. This array specifies
 	// the possible values which an enum custom field can adopt.
-	EnumOptions []*EnumValue `json:"enum_options,omitempty" dynamo:"enum_options"`
+	EnumOptions []*EnumValue `json:"enum_options,omitempty"`
 
 	// Only relevant for custom fields of type ‘Number’. This field dictates
 	// the number of places after the decimal to round to, i.e. 0 is integer
 	// values, 1 rounds to the nearest tenth, and so on.
-	Precision int `json:"precision,omitempty" dynamo:"precision"`
+	Precision int `json:"precision,omitempty"`
 }
 
 // When a custom field is associated with a project, tasks in that project can
