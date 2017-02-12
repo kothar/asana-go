@@ -218,33 +218,6 @@ type Options struct {
 	Offset string `json:"offset,omitempty" url:"offset,omitempty"`
 }
 
-// Attachment represents any file attached to a task in Asana,
-// whether it’s an uploaded file or one associated via a third-party service
-// such as Dropbox or Google Drive.
-type Attachment struct {
-	Expandable
-	WithName
-	WithParent
-	WithCreated
-
-	// Read-only. The URL containing the content of the attachment.
-	//
-	// Note: May be null if the attachment is hosted by box. If present, this
-	// URL may only be valid for 1 hour from the time of retrieval. You should
-	// avoid persisting this URL somewhere and just refresh it on demand to
-	// ensure you do not keep stale URLs.
-	DownloadURL string `json:"download_url,omitempty"`
-
-	// Read-only. The service hosting the attachment. Valid values are asana,
-	// dropbox, gdrive and box.
-	Host string `json:"host,omitempty"`
-
-	// Read-only. The URL where the attachment can be viewed, which may be
-	// friendlier to users in a browser than just directing them to a raw
-	// file.
-	ViewURL string `json:"view_url,omitempty"`
-}
-
 // Team is used to group related projects and people together within an
 // organization. Each project in an organization is associated with a team.
 type Team struct {
