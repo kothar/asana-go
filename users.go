@@ -1,5 +1,7 @@
 package asana
 
+import "fmt"
+
 // User represents an account in Asana that can be given access to various
 // workspaces, projects, and tasks.
 //
@@ -33,4 +35,23 @@ func (c *Client) CurrentUser() (*User, error) {
 	_, err := c.get("/users/me", nil, result)
 
 	return result, err
+}
+
+// User retrieves a user record by ID
+func (c *Client) User(id int64) *User {
+	result := &User{}
+	result.init(id, c)
+	return result
+}
+
+// Expand loads the full details for this User
+func (u *User) Expand() error {
+	u.trace("Loading details for user %q", u.ID)
+
+	if u.expanded {
+		return nil
+	}
+
+	_, err := u.client.get(fmt.Sprintf("/users/%d", u.ID), nil, u)
+	return err
 }

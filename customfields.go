@@ -1,5 +1,7 @@
 package asana
 
+import "fmt"
+
 type EnumValue struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
@@ -52,4 +54,23 @@ type CustomFieldValue struct {
 	// Custom fields of type enum will return an enum_value property
 	// containing an object that represents the selection of the enum value.
 	EnumValue *EnumValue
+}
+
+// CustomField retrieves a custom field record by ID
+func (c *Client) CustomField(id int64) *CustomField {
+	result := &CustomField{}
+	result.init(id, c)
+	return result
+}
+
+// Expand loads the full details for this CustomField
+func (f *CustomField) Expand() error {
+	f.trace("Loading details for custom field %q", f.ID)
+
+	if f.expanded {
+		return nil
+	}
+
+	_, err := f.client.get(fmt.Sprintf("/custom_fields/%d", f.ID), nil, f)
+	return err
 }
