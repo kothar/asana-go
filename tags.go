@@ -47,13 +47,13 @@ func (t *Tag) Expand() error {
 }
 
 // Tags returns a list of tags in this workspace
-func (w *Workspace) Tags() ([]*Tag, *NextPage, error) {
+func (w *Workspace) Tags(options ...*Options) ([]*Tag, *NextPage, error) {
 	w.trace("Listing tags in %q", w.Name)
 
 	var result []*Tag
 
 	// Make the request
-	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/tags", w.ID), nil, &result)
+	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/tags", w.ID), nil, &result, options...)
 	return result, nextPage, err
 }
 

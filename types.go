@@ -217,10 +217,3 @@ type Options struct {
 	// previously paginated request.
 	Offset string `json:"offset,omitempty" url:"offset,omitempty"`
 }
-
-// Team is used to group related projects and people together within an
-// organization. Each project in an organization is associated with a team.
-type Team struct {
-	Expandable
-	WithName
-}

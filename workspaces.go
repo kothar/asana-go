@@ -38,7 +38,7 @@ func (c *Client) Workspace(id int64) *Workspace {
 
 // Expand loads the full details for this Workspace
 func (w *Workspace) Expand() error {
-	w.trace("Loading workspace details for %q\n", w.Name)
+	w.trace("Loading details for workspace %d\n", w.ID)
 
 	if w.expanded {
 		return nil
