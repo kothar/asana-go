@@ -14,10 +14,18 @@ type TaskQuery struct {
 	// May be a string ('me', 'me@example.com') or an integer
 	Assignee interface{} `url:"assignee,omitempty"`
 
+	// The project to filter tasks on
+	Project int64 `url:"project,omitempty"`
+
+	// The section to filter tasks on.
+	//
+	// Note: Currently, this is only supported in board views.
+	Section int64 `url:"section,omitempty"`
+
 	// The workspace or organization to filter tasks on.
 	//
 	// Note: If you specify workspace, you must also specify the assignee to filter on.
-	Workspace uint64 `url:"workspace,omitempty"`
+	Workspace int64 `url:"workspace,omitempty"`
 
 	// Only return tasks that are either incomplete or that have been completed since this time.
 	//
