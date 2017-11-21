@@ -254,10 +254,12 @@ func (t *Task) CreateSubtask(task *Task) (*Task, error) {
 	return result, err
 }
 
-// QueryTasks finds matching tasks visible to the current client account
-func (c *Client) QueryTasks(query *TaskQuery) ([]*Task, *NextPage, error) {
+// QueryTasks returns the compact task records for some filtered set of tasks.
+// Use one or more of the parameters provided to filter the tasks returned.
+// You must specify a project or tag if you do not specify assignee and workspace.
+func (c *Client) QueryTasks(query *TaskQuery, opts ...*Options) ([]*Task, *NextPage, error) {
 	var result []*Task
 
-	nextPage, err := c.get("/tasks", &result, query)
+	nextPage, err := c.get("/tasks", query, &result, opts...)
 	return result, nextPage, err
 }
