@@ -1,17 +1,18 @@
 package asana
 
 import (
-	"net/http"
+	"context"
+
+	"golang.org/x/oauth2"
 )
 
 // NewClientWithAccessToken creates a new instance of the Asana client which uses a
 // Personal Access Token for authentication
 func NewClientWithAccessToken(accessToken string) *Client {
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			req.Header.Add("Authorization", "Bearer "+accessToken)
-			return nil
-		},
-	}
+	ctx := context.Background()
+	tokenSource := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: accessToken,
+	})
+	client := oauth2.NewClient(ctx, tokenSource)
 	return NewClient(client)
 }
