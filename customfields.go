@@ -33,6 +33,14 @@ type CustomField struct {
 	Precision int `json:"precision,omitempty"`
 }
 
+type CustomFieldSetting struct {
+	WithID
+
+	CustomField *CustomField `json:"custom_field"`
+
+	Project *Project `json:"project,omitempty"`
+}
+
 // When a custom field is associated with a project, tasks in that project can
 // carry additional custom field values which represent the value of the field
 // on that particular task - for instance, the selected item from an enum type
@@ -45,15 +53,15 @@ type CustomFieldValue struct {
 
 	// Custom fields of type text will return a text_value property containing
 	// the string of text for the field.
-	TextValue string
+	TextValue string `json:"text_value,omitempty"`
 
 	// Custom fields of type number will return a number_value property
 	// containing the number for the field.
-	NumberValue string
+	NumberValue string `json:"number_value,omitempty"`
 
 	// Custom fields of type enum will return an enum_value property
 	// containing an object that represents the selection of the enum value.
-	EnumValue *EnumValue
+	EnumValue *EnumValue `json:"enum_value,omitempty"`
 }
 
 // CustomField retrieves a custom field record by ID

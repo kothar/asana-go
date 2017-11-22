@@ -49,7 +49,7 @@ type TaskQuery struct {
 // is in.
 type Membership struct {
 	Project *Project `json:"project,omitempty"`
-	Section *Task    `json:"section,omitempty"`
+	Section *Section `json:"section,omitempty"`
 }
 
 // ExternalData allows a client application to add app-specific metadata to
@@ -226,6 +226,16 @@ func (p *Project) Tasks(opts ...*Options) ([]*Task, *NextPage, error) {
 
 	// Make the request
 	nextPage, err := p.client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result, opts...)
+	return result, nextPage, err
+}
+
+// Tasks returns a list of tasks in this section. Board view only.
+func (s *Section) Tasks(opts ...*Options) ([]*Task, *NextPage, error) {
+	s.trace("Listing tasks in %q", s.Name)
+	var result []*Task
+
+	// Make the request
+	nextPage, err := s.client.get(fmt.Sprintf("/sections/%d/tasks", s.ID), nil, &result, opts...)
 	return result, nextPage, err
 }
 

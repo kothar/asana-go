@@ -13,6 +13,14 @@ type ProjectStatus struct {
 	Author *User  `json:"author,omitempty"`
 }
 
+// Layout indicates the Project layout to use
+type Layout string
+
+const (
+	Board Layout = "board"
+	List  Layout = "list"
+)
+
 // ProjectBase contains the parts of Project which are not related to a specific instance
 type ProjectBase struct {
 	WithName
@@ -42,6 +50,9 @@ type ProjectBase struct {
 	// Create-only. The team that this project is shared with. This field only
 	// exists for projects in organizations.
 	Team *Team `json:"team,omitempty"`
+
+	// The layout (board or list view) of the project.
+	Layout Layout `json:"layout,omitempty"`
 }
 
 // NewProject represents a request to create a new project
@@ -77,6 +88,9 @@ type Project struct {
 
 	// Read-only. Array of users who are members of this project.
 	Members []*User `json:"members,omitempty"`
+
+	// Read-only. Array of Custom Field Settings (in compact form).
+	CustomFieldSettings []*CustomFieldSetting `json:"custom_field_settings,omitempty"`
 }
 
 // Project creates an unexpaned Project object with the given ID
