@@ -123,6 +123,31 @@ func (w *Workspace) Projects(options ...*Options) ([]*Project, *NextPage, error)
 	return result, nextPage, err
 }
 
+// AllProjects repeatedly pages through all available projects in a workspace
+func (w *Workspace) AllProjects(options ...*Options) ([]*Project, error) {
+	allProjects := []*Project{}
+	nextPage := &NextPage{}
+
+	var projects []*Project
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		projects, nextPage, err = w.Projects(allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allProjects = append(allProjects, projects...)
+	}
+	return allProjects, nil
+}
+
 // CreateProject adds a new project to a workspace
 func (c *Client) CreateProject(project *NewProject) (*Project, error) {
 	c.info("Creating project %q\n", project.Name)

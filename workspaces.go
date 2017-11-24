@@ -58,3 +58,28 @@ func (c *Client) Workspaces(options ...*Options) ([]*Workspace, *NextPage, error
 	nextPage, err := c.get("/workspaces", nil, &result, options...)
 	return result, nextPage, err
 }
+
+// AllWorkspaces repeatedly pages through all available workspaces for a client
+func (c *Client) AllWorkspaces(options ...*Options) ([]*Workspace, error) {
+	allWorkspaces := []*Workspace{}
+	nextPage := &NextPage{}
+
+	var workspaces []*Workspace
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		workspaces, nextPage, err = c.Workspaces(allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allWorkspaces = append(allWorkspaces, workspaces...)
+	}
+	return allWorkspaces, nil
+}
