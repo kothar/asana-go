@@ -4,7 +4,6 @@ package asana //import "bitbucket.org/mikehouston/asana-go"
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/google/go-querystring/query"
 	"github.com/imdario/mergo"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -71,7 +71,7 @@ func (c *Client) getURL(path string) string {
 func mergeQuery(q url.Values, request interface{}) error {
 	queryParams, err := query.Values(request)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal request to query parameters: %s", err)
+		return errors.Wrap(err, "Unable to marshal request to query parameters")
 	}
 
 	// Merge with defaults
@@ -93,7 +93,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 	q, err := query.Values(c.DefaultOptions)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to marshal DefaultOptions to query parameters: %s", err)
+		return nil, errors.Wrap(err, "Unable to marshal DefaultOptions to query parameters")
 	}
 
 	// Encode data
@@ -133,14 +133,14 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 	request, err := http.NewRequest(http.MethodGet, c.getURL(path), nil)
 	if err != nil {
-		return nil, fmt.Errorf("Request error: %s", err)
+		return nil, errors.Wrap(err, "Request error")
 	}
 	if c.FastAPI {
 		request.Header.Add("Asana-Fast-Api", "true")
 	}
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("GET error: %s", err)
+		return nil, errors.Wrap(err, "GET error")
 	}
 
 	// Parse the result
@@ -163,7 +163,7 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 		options = &Options{}
 	}
 	if err := mergo.Merge(options, c.DefaultOptions); err != nil {
-		return fmt.Errorf("unable to merge options: %s", err)
+		return errors.Wrap(err, "unable to merge options")
 	}
 
 	// Validate data
@@ -192,7 +192,7 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 	}
 	request, err := http.NewRequest(http.MethodPost, c.getURL(path), bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("Request error: %s", err)
+		return errors.Wrap(err, "Request error")
 	}
 
 	request.Header.Add("Body-Type", "application/json")
@@ -201,7 +201,7 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 	}
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return fmt.Errorf("POST error: %s", err)
+		return errors.Wrap(err, "POST error: %s")
 	}
 
 	_, err = c.parseResponse(resp, result)
@@ -240,7 +240,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) (*Respon
 
 	// Decode the data field
 	if value.Data == nil {
-		return nil, fmt.Errorf("Missing data from response")
+		return nil, errors.New("Missing data from response")
 	}
 
 	return value, c.parseResponseData(value.Data, result)
