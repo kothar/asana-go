@@ -82,3 +82,38 @@ func (f *CustomField) Expand() error {
 	_, err := f.client.get(fmt.Sprintf("/custom_fields/%d", f.ID), nil, f)
 	return err
 }
+
+// CustomFields returns the compact records for all custom fields in the workspace
+func (w *Workspace) CustomFields(options ...*Options) ([]*CustomField, *NextPage, error) {
+	w.trace("Listing custom fields in workspace %d...\n", w.ID)
+	var result []*CustomField
+
+	// Make the request
+	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/custom_fields", w.ID), nil, &result, options...)
+	return result, nextPage, err
+}
+
+// AllCustomFields repeatedly pages through all available custom fields in a workspace
+func (w *Workspace) AllCustomFields(options ...*Options) ([]*CustomField, error) {
+	allCustomFields := []*CustomField{}
+	nextPage := &NextPage{}
+
+	var customFields []*CustomField
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		customFields, nextPage, err = w.CustomFields(allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allCustomFields = append(allCustomFields, customFields...)
+	}
+	return allCustomFields, nil
+}

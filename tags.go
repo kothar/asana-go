@@ -57,6 +57,31 @@ func (w *Workspace) Tags(options ...*Options) ([]*Tag, *NextPage, error) {
 	return result, nextPage, err
 }
 
+// AllTags repeatedly pages through all available tags in a workspace
+func (w *Workspace) AllTags(options ...*Options) ([]*Tag, error) {
+	allTags := []*Tag{}
+	nextPage := &NextPage{}
+
+	var tags []*Tag
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		tags, nextPage, err = w.Tags(allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allTags = append(allTags, tags...)
+	}
+	return allTags, nil
+}
+
 // CreateTag adds a new tag to a workspace
 func (w *Workspace) CreateTag(tag *TagBase) (*Tag, error) {
 	w.info("Creating tag %q in %q\n", tag.Name, w.Name)

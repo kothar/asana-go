@@ -55,3 +55,38 @@ func (u *User) Expand() error {
 	_, err := u.client.get(fmt.Sprintf("/users/%d", u.ID), nil, u)
 	return err
 }
+
+// Users returns the compact records for all users in the organization visible to the authorized user
+func (w *Workspace) Users(options ...*Options) ([]*User, *NextPage, error) {
+	w.trace("Listing users in workspace %d...\n", w.ID)
+	var result []*User
+
+	// Make the request
+	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/users", w.ID), nil, &result, options...)
+	return result, nextPage, err
+}
+
+// AllUsers repeatedly pages through all available users in a workspace
+func (w *Workspace) AllUsers(options ...*Options) ([]*User, error) {
+	allUsers := []*User{}
+	nextPage := &NextPage{}
+
+	var users []*User
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		users, nextPage, err = w.Users(allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allUsers = append(allUsers, users...)
+	}
+	return allUsers, nil
+}

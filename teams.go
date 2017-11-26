@@ -47,3 +47,28 @@ func (w *Workspace) Teams(options ...*Options) ([]*Team, *NextPage, error) {
 	nextPage, err := w.client.get(fmt.Sprintf("/organizations/%d/teams", w.ID), nil, &result, options...)
 	return result, nextPage, err
 }
+
+// AllTeams repeatedly pages through all available teams in a workspace
+func (w *Workspace) AllTeams(options ...*Options) ([]*Team, error) {
+	allTeams := []*Team{}
+	nextPage := &NextPage{}
+
+	var teams []*Team
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		teams, nextPage, err = w.Teams(allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allTeams = append(allTeams, teams...)
+	}
+	return allTeams, nil
+}
