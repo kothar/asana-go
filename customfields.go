@@ -3,11 +3,20 @@ package asana
 import "fmt"
 
 type EnumValue struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
+	WithID
+	WithName
 	Enabled bool   `json:"enabled"`
 	Color   string `json:"color"`
 }
+
+type FieldType string
+
+// FieldTypes for CustomField.Type field
+const (
+	Text   FieldType = "text"
+	Enum   FieldType = "enum"
+	Number FieldType = "number"
+)
 
 // Custom Fields store the metadata that is used in order to add user-
 // specified information to tasks in Asana. Be sure to reference the Custom
@@ -21,7 +30,7 @@ type CustomField struct {
 
 	// The type of the custom field. Must be one of the given values:
 	// 'text', 'enum', 'number'
-	Type string `json:"type"`
+	Type FieldType `json:"type"`
 
 	// Only relevant for custom fields of type ‘Enum’. This array specifies
 	// the possible values which an enum custom field can adopt.
