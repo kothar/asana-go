@@ -87,9 +87,6 @@ type TaskBase struct {
 	WithName
 	WithNotes
 
-	// User to which this task is assigned, or null if the task is unassigned.
-	Assignee *User `json:"assignee,omitempty"`
-
 	// Scheduling status of this task for the user it is assigned to. This
 	// field can only be set if the assignee is non-null.
 	AssigneeStatus string `json:"assignee_status,omitempty"`
@@ -119,8 +116,8 @@ type TaskBase struct {
 }
 
 // Validate checks the task data and fixes any problems
-func (t *TaskBase) Validate() error {
-	if t.Assignee == nil {
+func (t *NewTask) Validate() error {
+	if t.Assignee == 0 {
 		t.AssigneeStatus = ""
 	}
 
@@ -133,6 +130,9 @@ func (t *TaskBase) Validate() error {
 // NewTask represents a request to create a new Task
 type NewTask struct {
 	TaskBase
+
+	Assignee  int64   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
+	Followers []int64 `json:"followers,omitempty"` // Array of users following this task.
 
 	// TODO CustomFields
 	Workspace int64   `json:"workspace,omitempty"`
@@ -165,6 +165,13 @@ type Task struct {
 	WithWorkspace
 	WithHearts
 	WithFollowers
+
+	// User to which this task is assigned, or null if the task is unassigned.
+	Assignee *User `json:"assignee,omitempty"`
+
+	// Scheduling status of this task for the user it is assigned to. This
+	// field can only be set if the assignee is non-null.
+	AssigneeStatus string `json:"assignee_status,omitempty"`
 
 	// Read-only. The time at which this task was completed, or null if the
 	// task is incomplete.
@@ -216,6 +223,50 @@ func (t *Task) Expand() error {
 	}
 
 	_, err := t.client.get(fmt.Sprintf("/tasks/%d", t.ID), nil, t)
+	return err
+}
+
+// Update applies new values to a Task record
+func (t *Task) Update(update *TaskBase) error {
+	t.trace("Updating task %q", t.Name)
+
+	err := t.client.put(fmt.Sprintf("/tasks/%d", t.ID), update, t)
+	return err
+}
+
+// AddProjectRequest defines the location a task should be added to a project
+type AddProjectRequest struct {
+	Project      int64 // Required: The project to add the task to.
+	InsertAfter  int64 // A task in the project to insert the task after, or -1 to insert at the beginning of the list.
+	InsertBefore int64 // A task in the project to insert the task before, or -1 to insert at the end of the list.
+	Section      int64 // A section in the project to insert the task into. The task will be inserted at the bottom of the section.
+}
+
+// AddProject adds this task to an existing project at the provided location
+func (t *Task) AddProject(request *AddProjectRequest) error {
+	t.trace("Addint task %q to project", t.ID, request.Project)
+
+	// Custom encoding of Insert fields needed
+	m := map[string]interface{}{
+		"task":    t.ID,
+		"project": request.Project,
+	}
+
+	if request.InsertAfter == -1 {
+		m["insert_after"] = nil
+	} else if request.InsertBefore == -1 {
+		m["insert_before"] = nil
+	} else if request.InsertAfter > 0 {
+		m["insert_after"] = request.InsertAfter
+	} else if request.InsertBefore > 0 {
+		m["insert_before"] = request.InsertBefore
+	}
+
+	if request.Section > 0 {
+		m["section"] = request.Section
+	}
+
+	err := t.client.post(fmt.Sprintf("/tasks/%d/addProject", t.ID), m, nil)
 	return err
 }
 

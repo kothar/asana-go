@@ -153,7 +153,14 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 }
 
 func (c *Client) post(path string, data, result interface{}, opts ...*Options) error {
+	return c.do(http.MethodPost, path, data, result, opts...)
+}
 
+func (c *Client) put(path string, data, result interface{}, opts ...*Options) error {
+	return c.do(http.MethodPut, path, data, result, opts...)
+}
+
+func (c *Client) do(method, path string, data, result interface{}, opts ...*Options) error {
 	// Prepare options
 	var options *Options
 	if opts != nil {
@@ -188,9 +195,9 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 	// Make request
 	if c.Debug {
 		body, _ := json.MarshalIndent(req, "", "  ")
-		log.Printf("POST %s\n%s", path, body)
+		log.Printf("%s %s\n%s", method, path, body)
 	}
-	request, err := http.NewRequest(http.MethodPost, c.getURL(path), bytes.NewReader(body))
+	request, err := http.NewRequest(method, c.getURL(path), bytes.NewReader(body))
 	if err != nil {
 		return errors.Wrap(err, "Request error")
 	}
@@ -201,7 +208,7 @@ func (c *Client) post(path string, data, result interface{}, opts ...*Options) e
 	}
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return errors.Wrap(err, "POST error: %s")
+		return errors.Wrapf(err, "%s error", method)
 	}
 
 	_, err = c.parseResponse(resp, result)
