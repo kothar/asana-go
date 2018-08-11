@@ -8,10 +8,11 @@ import (
 
 func ListWorkspaces(c *asana.Client) error {
 	// List workspaces
-	workspaces, err := c.Workspaces()
+	workspaces, nextPage, err := c.Workspaces()
 	if err != nil {
 		return err
 	}
+	_ = nextPage
 
 	for _, workspace := range workspaces {
 		if workspace.IsOrganization {
@@ -25,10 +26,11 @@ func ListWorkspaces(c *asana.Client) error {
 
 func ListProjects(w *asana.Workspace) error {
 	// List projects
-	projects, err := w.Projects()
+	projects, nextPage, err := w.Projects()
 	if err != nil {
 		return err
 	}
+	_ = nextPage
 
 	for _, project := range projects {
 		fmt.Printf("Project %d: %s\n", project.ID, project.Name)
@@ -38,10 +40,11 @@ func ListProjects(w *asana.Workspace) error {
 
 func ListTasks(p *asana.Project) error {
 	// List projects
-	tasks, err := p.Tasks()
+	tasks, nextPage, err := p.Tasks()
 	if err != nil {
 		return err
 	}
+	_ = nextPage
 
 	for _, task := range tasks {
 		fmt.Printf("Task %d: %s\n", task.ID, task.Name)

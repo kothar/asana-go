@@ -237,12 +237,8 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) (*Respon
 	switch resp.StatusCode {
 	case 200: // OK
 	case 201: // Object created
-	case 401:
-		return nil, value.Error(resp.StatusCode, "Authorization")
-	case 404:
-		return nil, value.Error(resp.StatusCode, "Not Found")
 	default:
-		return nil, value.Error(resp.StatusCode, resp.Status)
+		return nil, value.Error(resp)
 	}
 
 	// Decode the data field

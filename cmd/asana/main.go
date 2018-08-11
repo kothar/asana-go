@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/jessevdk/go-flags"
 	"log"
 	"net/http"
 	"net/url"
-	"time"
-
-	"github.com/jessevdk/go-flags"
 
 	"bitbucket.org/mikehouston/asana-go"
 	"bitbucket.org/mikehouston/asana-go/util"
@@ -52,10 +50,6 @@ func main() {
 	}
 	client.Verbose = options.Verbose
 
-	cache, err := asana.NewMapCache(time.Minute * 5)
-	check(err)
-	client.Cache = cache
-
 	// Load a task object
 	if options.Task == nil {
 
@@ -97,8 +91,9 @@ func main() {
 		}
 
 		// Get subtasks
-		subtasks, err := task.Subtasks()
+		subtasks, nextPage, err := task.Subtasks()
 		check(err)
+		_ = nextPage
 
 		for _, subtask := range subtasks {
 			fmt.Printf("  Subtask %d: %s\n", subtask.ID, subtask.Name)
