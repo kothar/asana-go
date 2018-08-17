@@ -135,10 +135,11 @@ type NewTask struct {
 	Followers []int64 `json:"followers,omitempty"` // Array of users following this task.
 
 	// TODO CustomFields
-	Workspace int64   `json:"workspace,omitempty"`
-	Parent    int64   `json:"parent,omitempty"`
-	Projects  []int64 `json:"projects,omitempty"`
-	Tags      []int64 `json:"tags,omitempty"`
+	Workspace   int64         `json:"workspace,omitempty"`
+	Parent      int64         `json:"parent,omitempty"`
+	Projects    []int64       `json:"projects,omitempty"`
+	Memberships []*Membership `json:"memberships,omitempty"`
+	Tags        []int64       `json:"tags,omitempty"`
 }
 
 // Task is the basic object around which many operations in Asana are
