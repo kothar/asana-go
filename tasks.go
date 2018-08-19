@@ -237,6 +237,7 @@ func (t *Task) Update(update *TaskBase) error {
 
 // AddProjectRequest defines the location a task should be added to a project
 type AddProjectRequest struct {
+	Task         int64 // Required: The task to change the project of.
 	Project      int64 // Required: The project to add the task to.
 	InsertAfter  int64 // A task in the project to insert the task after, or -1 to insert at the beginning of the list.
 	InsertBefore int64 // A task in the project to insert the task before, or -1 to insert at the end of the list.
@@ -245,7 +246,7 @@ type AddProjectRequest struct {
 
 // AddProject adds this task to an existing project at the provided location
 func (t *Task) AddProject(request *AddProjectRequest) error {
-	t.trace("Addint task %q to project", t.ID, request.Project)
+	t.trace("Adding task %q to project %q", t.ID, request.Project)
 
 	// Custom encoding of Insert fields needed
 	m := map[string]interface{}{
@@ -268,6 +269,39 @@ func (t *Task) AddProject(request *AddProjectRequest) error {
 	}
 
 	err := t.client.post(fmt.Sprintf("/tasks/%d/addProject", t.ID), m, nil)
+	return err
+}
+
+// SetParentRequest changes the parent of a task. Each task may only be a subtask of a single parent, or no parent task at all.
+// When using insert_before and insert_after, at most one of those two options can be specified, and they must already be subtasks of the parent.
+type SetParentRequest struct {
+	Task         int64 // Required: The task to change the parent of.
+	Parent       int64 // Required: The new parent of the task, or null for no parent.
+	InsertAfter  int64 // A subtask of the parent to insert the task after, or -1 to insert at the beginning of the list.
+	InsertBefore int64 // A subtask of the parent to insert the task before, or -1 to insert at the end of the list.
+}
+
+// SetParent changes the parent of a task
+func (t *Task) SetParent(request *SetParentRequest) error {
+	t.trace("Setting the parent of task %q to %q", t.ID, request.Parent)
+
+	// Custom encoding of Insert fields needed
+	m := map[string]interface{}{
+		"task":   t.ID,
+		"parent": request.Parent,
+	}
+
+	if request.InsertAfter == -1 {
+		m["insert_after"] = nil
+	} else if request.InsertBefore == -1 {
+		m["insert_before"] = nil
+	} else if request.InsertAfter > 0 {
+		m["insert_after"] = request.InsertAfter
+	} else if request.InsertBefore > 0 {
+		m["insert_before"] = request.InsertBefore
+	}
+
+	err := t.client.post(fmt.Sprintf("/tasks/%d/setParent", t.ID), m, nil)
 	return err
 }
 
