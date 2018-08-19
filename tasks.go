@@ -134,12 +134,12 @@ type NewTask struct {
 	Assignee  int64   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
 	Followers []int64 `json:"followers,omitempty"` // Array of users following this task.
 
-	// TODO CustomFields
-	Workspace   int64         `json:"workspace,omitempty"`
-	Parent      int64         `json:"parent,omitempty"`
-	Projects    []int64       `json:"projects,omitempty"`
-	Memberships []*Membership `json:"memberships,omitempty"`
-	Tags        []int64       `json:"tags,omitempty"`
+	Workspace    int64                 `json:"workspace,omitempty"`
+	Parent       int64                 `json:"parent,omitempty"`
+	Projects     []int64               `json:"projects,omitempty"`
+	Memberships  []*Membership         `json:"memberships,omitempty"`
+	Tags         []int64               `json:"tags,omitempty"`
+	CustomFields map[int64]interface{} `json:"custom_fields,omitempty"`
 }
 
 // Task is the basic object around which many operations in Asana are
@@ -237,7 +237,6 @@ func (t *Task) Update(update *TaskBase) error {
 
 // AddProjectRequest defines the location a task should be added to a project
 type AddProjectRequest struct {
-	Task         int64 // Required: The task to change the project of.
 	Project      int64 // Required: The project to add the task to.
 	InsertAfter  int64 // A task in the project to insert the task after, or -1 to insert at the beginning of the list.
 	InsertBefore int64 // A task in the project to insert the task before, or -1 to insert at the end of the list.
@@ -275,7 +274,6 @@ func (t *Task) AddProject(request *AddProjectRequest) error {
 // SetParentRequest changes the parent of a task. Each task may only be a subtask of a single parent, or no parent task at all.
 // When using insert_before and insert_after, at most one of those two options can be specified, and they must already be subtasks of the parent.
 type SetParentRequest struct {
-	Task         int64 // Required: The task to change the parent of.
 	Parent       int64 // Required: The new parent of the task, or null for no parent.
 	InsertAfter  int64 // A subtask of the parent to insert the task after, or -1 to insert at the beginning of the list.
 	InsertBefore int64 // A subtask of the parent to insert the task before, or -1 to insert at the end of the list.

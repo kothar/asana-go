@@ -6,14 +6,24 @@ import (
 
 // StoryBase contains the text of a story, as used when creating a new comment
 type StoryBase struct {
-	// Create-only. Human-readable text for the story or comment. This will
-	// not include the name of the creator.
+	// Human-readable text for the story or comment. This will
+	// not include the name of the creator. Can be edited only if the story is a comment.
 	//
 	// Note: This is not guaranteed to be stable for a given type of story.
 	// For example, text for a reassignment may not always say “assigned to
 	// …”. The API currently does not provide a structured way of inspecting
 	// the meaning of a story.
 	Text string `json:"text,omitempty"`
+
+	// HTML formatted text for a comment. This will not include the name of the creator.
+	// Can be edited only if the story is a comment.
+	//
+	// Note: This field is only returned if explicitly requested using the
+	// opt_fields query parameter.
+	HTMLText string `json:"html_text,omitempty"`
+
+	// Whether the story should be pinned on the resource.
+	IsPinned bool `json:"is_pinned,omitempty"`
 }
 
 // Story represents an activity associated with an object in the Asana
@@ -32,13 +42,6 @@ type Story struct {
 
 	// The user who created the story.
 	CreatedBy *User `json:"created_by,omitempty"`
-
-	// Read-only. HTML formatted text for a comment. This will not include the
-	// name of the creator.
-	//
-	// Note: This field is only returned if explicitly requested using the
-	// opt_fields query parameter.
-	HTMLText string `json:"html_text,omitempty"`
 
 	// Read-only. The object this story is associated with. Currently may only
 	// be a task.
@@ -71,5 +74,18 @@ func (t *Task) CreateComment(story *StoryBase) (*Story, error) {
 	result.expanded = true
 
 	err := t.client.post(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, result)
+	return result, err
+}
+
+// UpdateStory updates the story and returns the full record for the updated story.
+// Only comment stories can have their text updated, and only comment stories and attachment stories can be pinned.
+// Only one of text and html_text can be specified.
+func (s *Story) UpdateStory(story *StoryBase) (*Story, error) {
+	s.info("Updating story %d", s.ID)
+
+	result := &Story{}
+	result.expanded = true
+
+	err := s.client.put(fmt.Sprintf("/stories/%d", s.ID), nil, result)
 	return result, err
 }
