@@ -24,7 +24,7 @@ type Section struct {
 }
 
 // Section creates an unexpanded Section object with the given ID
-func (c *Client) Section(id string) *Section {
+func NewSection(id string) *Section {
 	result := &Section{}
 	result.ID = id
 	return result
