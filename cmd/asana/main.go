@@ -70,7 +70,7 @@ func main() {
 		}
 
 		for _, p := range options.Project {
-			project := client.Project(p)
+			project := asana.NewProject(p)
 
 			check(util.ListTasks(client, project))
 		}

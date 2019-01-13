@@ -55,8 +55,8 @@ type ProjectBase struct {
 	Layout Layout `json:"layout,omitempty"`
 }
 
-// NewProject represents a request to create a new project
-type NewProject struct {
+// CreateProjectRequest represents a request to create a new project
+type CreateProjectRequest struct {
 	ProjectBase
 
 	Workspace string `json:"workspace,omitempty"`
@@ -94,7 +94,7 @@ type Project struct {
 }
 
 // Project creates an unexpaned Project object with the given ID
-func (c *Client) Project(id string) *Project {
+func NewProject(id string) *Project {
 	result := &Project{}
 	result.ID = id
 	return result
@@ -149,7 +149,7 @@ func (w *Workspace) AllProjects(client *Client, options ...*Options) ([]*Project
 }
 
 // CreateProject adds a new project to a workspace
-func (c *Client) CreateProject(project *NewProject) (*Project, error) {
+func (c *Client) CreateProject(project *CreateProjectRequest) (*Project, error) {
 	c.info("Creating project %q\n", project.Name)
 
 	result := &Project{}
