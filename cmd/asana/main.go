@@ -14,9 +14,9 @@ import (
 var options struct {
 	Token string `long:"token" description:"Personal Access Token used to authorize access to the API" env:"ASANA_TOKEN" required:"true"`
 
-	Workspace []int64 `long:"workspace" short:"w" description:"Workspace to access"`
-	Project   []int64 `long:"project" short:"p" description:"Project to access"`
-	Task      []int64 `long:"task" short:"t" description:"Task to access"`
+	Workspace []string `long:"workspace" short:"w" description:"Workspace to access"`
+	Project   []string `long:"project" short:"p" description:"Project to access"`
+	Task      []string `long:"task" short:"t" description:"Task to access"`
 
 	Debug   bool   `short:"d" long:"debug" description:"Show debug information"`
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose output"`
@@ -63,8 +63,8 @@ func main() {
 			}
 
 			for _, w := range options.Workspace {
-				workspace := client.Workspace(w)
-				check(util.ListProjects(workspace))
+				workspace := asana.NewWorkspace(w)
+				check(util.ListProjects(client, workspace))
 			}
 			return
 		}
@@ -72,31 +72,31 @@ func main() {
 		for _, p := range options.Project {
 			project := client.Project(p)
 
-			check(util.ListTasks(project))
+			check(util.ListTasks(client, project))
 		}
 		return
 	}
 
 	for _, t := range options.Task {
-		task := client.Task(t)
-		check(task.Expand())
+		task := asana.NewTask(t)
+		check(task.Expand(client))
 
-		fmt.Printf("Task %d: %s\n", task.ID, task.Name)
+		fmt.Printf("Task %s: %q\n", task.ID, task.Name)
 		fmt.Printf("  Completed: %v\n", task.Completed)
 		if !task.Completed {
 			fmt.Printf("  Due: %s\n", task.DueAt)
 		}
 		if task.Notes != "" {
-			fmt.Printf("  Notes: %s\n", task.Notes)
+			fmt.Printf("  Notes: %q\n", task.Notes)
 		}
 
 		// Get subtasks
-		subtasks, nextPage, err := task.Subtasks()
+		subtasks, nextPage, err := task.Subtasks(client)
 		check(err)
 		_ = nextPage
 
 		for _, subtask := range subtasks {
-			fmt.Printf("  Subtask %d: %s\n", subtask.ID, subtask.Name)
+			fmt.Printf("  Subtask %s: %q\n", subtask.ID, subtask.Name)
 		}
 	}
 }

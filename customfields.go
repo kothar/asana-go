@@ -73,38 +73,38 @@ type CustomFieldValue struct {
 	EnumValue *EnumValue `json:"enum_value,omitempty"`
 }
 
-// CustomField retrieves a custom field record by ID
-func (c *Client) CustomField(id int64) *CustomField {
+// NewCustomField creates a custom field record with the given ID
+func NewCustomField(id string) *CustomField {
 	result := &CustomField{}
-	result.init(id, c)
+	result.ID = id
 	return result
 }
 
 // Expand loads the full details for this CustomField
-func (f *CustomField) Expand() error {
-	f.trace("Loading details for custom field %q", f.ID)
+func (f *CustomField) Expand(client *Client) error {
+	client.trace("Loading details for custom field %q", f.ID)
 
 	if f.expanded {
 		return nil
 	}
 
-	_, err := f.client.get(fmt.Sprintf("/custom_fields/%d", f.ID), nil, f)
+	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f)
 	return err
 }
 
 // CustomFields returns the compact records for all custom fields in the workspace
-func (w *Workspace) CustomFields(options ...*Options) ([]*CustomField, *NextPage, error) {
-	w.trace("Listing custom fields in workspace %d...\n", w.ID)
+func (w *Workspace) CustomFields(client *Client, options ...*Options) ([]*CustomField, *NextPage, error) {
+	client.trace("Listing custom fields in workspace %s...\n", w.ID)
 	var result []*CustomField
 
 	// Make the request
-	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/custom_fields", w.ID), nil, &result, options...)
+	nextPage, err := client.get(fmt.Sprintf("/workspaces/%s/custom_fields", w.ID), nil, &result, options...)
 	return result, nextPage, err
 }
 
 // AllCustomFields repeatedly pages through all available custom fields in a workspace
-func (w *Workspace) AllCustomFields(options ...*Options) ([]*CustomField, error) {
-	allCustomFields := []*CustomField{}
+func (w *Workspace) AllCustomFields(client *Client, options ...*Options) ([]*CustomField, error) {
+	var allCustomFields []*CustomField
 	nextPage := &NextPage{}
 
 	var customFields []*CustomField
@@ -117,7 +117,7 @@ func (w *Workspace) AllCustomFields(options ...*Options) ([]*CustomField, error)
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		customFields, nextPage, err = w.CustomFields(allOptions...)
+		customFields, nextPage, err = w.CustomFields(client, allOptions...)
 		if err != nil {
 			return nil, err
 		}

@@ -13,44 +13,39 @@ type Team struct {
 	Organization *Workspace `json:"organization,omitempty"`
 }
 
-// Team creates an unexpanded Team object with the given ID
-func (c *Client) Team(id int64) *Team {
+// NewTeam creates a Team record stub with the given ID
+func NewTeam(id string) *Team {
 	result := &Team{}
-	result.init(id, c)
+	result.ID = id
 	return result
 }
 
 // Expand loads the full details for this Team
-func (t *Team) Expand() error {
-	t.trace("Loading team details for %q\n", t.Name)
+func (t *Team) Expand(client *Client) error {
+	client.trace("Loading team details for %q\n", t.Name)
 
 	if t.expanded {
 		return nil
 	}
 
 	// Use fields options to request Organization field which is not returned by default
-	_, err := t.client.get(fmt.Sprintf("/teams/%d", t.ID), nil, t, Fields(*t))
-
-	// This should be set by injection, not sure why it isn't
-	if t.Organization != nil {
-		t.Organization.client = t.client
-	}
+	_, err := client.get(fmt.Sprintf("/teams/%s", t.ID), nil, t, Fields(*t))
 	return err
 }
 
 // Teams returns the compact records for all teams in the organization visible to the authorized user
-func (w *Workspace) Teams(options ...*Options) ([]*Team, *NextPage, error) {
-	w.trace("Listing teams in workspace %d...\n", w.ID)
+func (w *Workspace) Teams(client *Client, options ...*Options) ([]*Team, *NextPage, error) {
+	client.trace("Listing teams in workspace %s...\n", w.ID)
 	var result []*Team
 
 	// Make the request
-	nextPage, err := w.client.get(fmt.Sprintf("/organizations/%d/teams", w.ID), nil, &result, options...)
+	nextPage, err := client.get(fmt.Sprintf("/organizations/%s/teams", w.ID), nil, &result, options...)
 	return result, nextPage, err
 }
 
 // AllTeams repeatedly pages through all available teams in a workspace
-func (w *Workspace) AllTeams(options ...*Options) ([]*Team, error) {
-	allTeams := []*Team{}
+func (w *Workspace) AllTeams(client *Client, options ...*Options) ([]*Team, error) {
+	var allTeams []*Team
 	nextPage := &NextPage{}
 
 	var teams []*Team
@@ -63,7 +58,7 @@ func (w *Workspace) AllTeams(options ...*Options) ([]*Team, error) {
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		teams, nextPage, err = w.Teams(allOptions...)
+		teams, nextPage, err = w.Teams(client, allOptions...)
 		if err != nil {
 			return nil, err
 		}

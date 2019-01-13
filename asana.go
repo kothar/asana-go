@@ -254,8 +254,5 @@ func (c *Client) parseResponseData(data []byte, result interface{}) error {
 		return err
 	}
 
-	// Inject the client into expandable types
-	c.inject(result)
-
 	return nil
 }

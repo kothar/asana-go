@@ -21,15 +21,3 @@ func (c *Client) debug(format string, args ...interface{}) {
 		log.Printf(format, args...)
 	}
 }
-
-func (e *Expandable) info(format string, args ...interface{}) {
-	e.client.info(format, args...)
-}
-
-func (e *Expandable) trace(format string, args ...interface{}) {
-	e.client.trace(format, args...)
-}
-
-func (e *Expandable) debug(format string, args ...interface{}) {
-	e.client.debug(format, args...)
-}

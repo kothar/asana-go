@@ -38,16 +38,16 @@ func (d *Date) UnmarshalJSON(value []byte) error {
 // WithID is a mixin for objects with an ID
 type WithID struct {
 	// Read-only. Globally unique ID of the object
-	ID int64 `json:"id,omitempty"`
+	ID string `json:"gid,omitempty"`
 }
 
-// HasID objects have int64 IDs
+// HasID objects have string GIDs
 type HasID interface {
-	GetID() int64
+	GetID() string
 }
 
 // GetID returns the ID of an object
-func (a *WithID) GetID() int64 {
+func (a *WithID) GetID() string {
 	return a.ID
 }
 
@@ -55,21 +55,7 @@ func (a *WithID) GetID() int64 {
 type Expandable struct {
 	WithID
 
-	client   *Client
 	expanded bool
-}
-
-func (e *Expandable) init(id int64, c *Client) {
-	e.ID = id
-	e.client = c
-}
-
-func (e *Expandable) Client() *Client {
-	return e.client
-}
-
-func (e *Expandable) SetClient(c *Client) {
-	e.client = c
 }
 
 // Validator types have a Validate method which is called before posting the

@@ -59,8 +59,8 @@ type ProjectBase struct {
 type NewProject struct {
 	ProjectBase
 
-	Workspace int64 `json:"workspace,omitempty"`
-	Team      int64 `json:"team,omitempty"`
+	Workspace string `json:"workspace,omitempty"`
+	Team      string `json:"team,omitempty"`
 }
 
 // Project represents a prioritized list of tasks in Asana. It exists in a
@@ -94,37 +94,37 @@ type Project struct {
 }
 
 // Project creates an unexpaned Project object with the given ID
-func (c *Client) Project(id int64) *Project {
+func (c *Client) Project(id string) *Project {
 	result := &Project{}
-	result.init(id, c)
+	result.ID = id
 	return result
 }
 
 // Expand loads the full details for this Project
-func (p *Project) Expand() error {
-	p.trace("Loading project details for %q", p.Name)
+func (p *Project) Expand(client *Client) error {
+	client.trace("Loading project details for %q", p.Name)
 
 	if p.expanded {
 		return nil
 	}
 
-	_, err := p.client.get(fmt.Sprintf("/projects/%d", p.ID), nil, p)
+	_, err := client.get(fmt.Sprintf("/projects/%s", p.ID), nil, p)
 	return err
 }
 
 // Projects returns a list of projects in this workspace
-func (w *Workspace) Projects(options ...*Options) ([]*Project, *NextPage, error) {
-	w.trace("Listing projects in %q", w.Name)
+func (w *Workspace) Projects(client *Client, options ...*Options) ([]*Project, *NextPage, error) {
+	client.trace("Listing projects in %q", w.Name)
 
 	var result []*Project
 
 	// Make the request
-	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/projects", w.ID), nil, &result, options...)
+	nextPage, err := client.get(fmt.Sprintf("/workspaces/%s/projects", w.ID), nil, &result, options...)
 	return result, nextPage, err
 }
 
 // AllProjects repeatedly pages through all available projects in a workspace
-func (w *Workspace) AllProjects(options ...*Options) ([]*Project, error) {
+func (w *Workspace) AllProjects(client *Client, options ...*Options) ([]*Project, error) {
 	allProjects := []*Project{}
 	nextPage := &NextPage{}
 
@@ -138,7 +138,7 @@ func (w *Workspace) AllProjects(options ...*Options) ([]*Project, error) {
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		projects, nextPage, err = w.Projects(allOptions...)
+		projects, nextPage, err = w.Projects(client, allOptions...)
 		if err != nil {
 			return nil, err
 		}

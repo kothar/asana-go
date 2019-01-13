@@ -29,22 +29,22 @@ type Workspace struct {
 	EmailDomains []string `json:"email_domains,omitempty"`
 }
 
-// Workspace creates an unexpanded Workspace object with the given ID
-func (c *Client) Workspace(id int64) *Workspace {
+// NewWorkspace creates a new Workspace record stub with the given ID
+func NewWorkspace(id string) *Workspace {
 	result := &Workspace{}
-	result.init(id, c)
+	result.ID = id
 	return result
 }
 
 // Expand loads the full details for this Workspace
-func (w *Workspace) Expand() error {
-	w.trace("Loading details for workspace %d\n", w.ID)
+func (w *Workspace) Expand(client *Client) error {
+	client.trace("Loading details for workspace %s\n", w.ID)
 
 	if w.expanded {
 		return nil
 	}
 
-	_, err := w.client.get(fmt.Sprintf("/workspaces/%d", w.ID), nil, w)
+	_, err := client.get(fmt.Sprintf("/workspaces/%s", w.ID), nil, w)
 	return err
 }
 

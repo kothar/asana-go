@@ -27,38 +27,38 @@ type Tag struct {
 	WithFollowers
 }
 
-// Tag retrieves a tag record by ID
-func (c *Client) Tag(id int64) *Tag {
+// NewTag creates a tag record stub with the given ID
+func NewTag(id string) *Tag {
 	result := &Tag{}
-	result.init(id, c)
+	result.ID = id
 	return result
 }
 
 // Expand loads the full details for this Tag
-func (t *Tag) Expand() error {
-	t.trace("Loading details for tag %q", t.Name)
+func (t *Tag) Expand(client *Client) error {
+	client.trace("Loading details for tag %q", t.Name)
 
 	if t.expanded {
 		return nil
 	}
 
-	_, err := t.client.get(fmt.Sprintf("/tags/%d", t.ID), nil, t)
+	_, err := client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t)
 	return err
 }
 
 // Tags returns a list of tags in this workspace
-func (w *Workspace) Tags(options ...*Options) ([]*Tag, *NextPage, error) {
-	w.trace("Listing tags in %q", w.Name)
+func (w *Workspace) Tags(client *Client, options ...*Options) ([]*Tag, *NextPage, error) {
+	client.trace("Listing tags in %q", w.Name)
 
 	var result []*Tag
 
 	// Make the request
-	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/tags", w.ID), nil, &result, options...)
+	nextPage, err := client.get(fmt.Sprintf("/workspaces/%s/tags", w.ID), nil, &result, options...)
 	return result, nextPage, err
 }
 
 // AllTags repeatedly pages through all available tags in a workspace
-func (w *Workspace) AllTags(options ...*Options) ([]*Tag, error) {
+func (w *Workspace) AllTags(client *Client, options ...*Options) ([]*Tag, error) {
 	allTags := []*Tag{}
 	nextPage := &NextPage{}
 
@@ -72,7 +72,7 @@ func (w *Workspace) AllTags(options ...*Options) ([]*Tag, error) {
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		tags, nextPage, err = w.Tags(allOptions...)
+		tags, nextPage, err = w.Tags(client, allOptions...)
 		if err != nil {
 			return nil, err
 		}
@@ -83,13 +83,13 @@ func (w *Workspace) AllTags(options ...*Options) ([]*Tag, error) {
 }
 
 // CreateTag adds a new tag to a workspace
-func (w *Workspace) CreateTag(tag *TagBase) (*Tag, error) {
-	w.info("Creating tag %q in %q\n", tag.Name, w.Name)
+func (w *Workspace) CreateTag(client *Client, tag *TagBase) (*Tag, error) {
+	client.info("Creating tag %q in %q\n", tag.Name, w.Name)
 
 	result := &Tag{}
 	result.expanded = true
 
-	err := w.client.post(fmt.Sprintf("/workspaces/%d/tags", w.ID), tag, result)
+	err := client.post(fmt.Sprintf("/workspaces/%s/tags", w.ID), tag, result)
 	if err != nil {
 		return nil, err
 	}

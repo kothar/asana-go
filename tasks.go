@@ -11,21 +11,21 @@ type TaskQuery struct {
 	//
 	// Note: If you specify assignee, you must also specify the workspace to filter on.
 	//
-	// May be a string ('me', 'me@example.com') or an integer
-	Assignee interface{} `url:"assignee,omitempty"`
+	// May be a GID, 'me' or user email string ('14113', 'me', 'me@example.com')
+	Assignee string `url:"assignee,omitempty"`
 
 	// The project to filter tasks on
-	Project int64 `url:"project,omitempty"`
+	Project string `url:"project,omitempty"`
 
 	// The section to filter tasks on.
 	//
 	// Note: Currently, this is only supported in board views.
-	Section int64 `url:"section,omitempty"`
+	Section string `url:"section,omitempty"`
 
 	// The workspace or organization to filter tasks on.
 	//
 	// Note: If you specify workspace, you must also specify the assignee to filter on.
-	Workspace int64 `url:"workspace,omitempty"`
+	Workspace string `url:"workspace,omitempty"`
 
 	// Only return tasks that are either incomplete or that have been completed since this time.
 	//
@@ -116,8 +116,8 @@ type TaskBase struct {
 }
 
 // Validate checks the task data and fixes any problems
-func (t *NewTask) Validate() error {
-	if t.Assignee == 0 {
+func (t *CreateTaskRequest) Validate() error {
+	if t.Assignee == "" {
 		t.AssigneeStatus = ""
 	}
 
@@ -127,19 +127,19 @@ func (t *NewTask) Validate() error {
 	return nil
 }
 
-// NewTask represents a request to create a new Task
-type NewTask struct {
+// CreateTaskRequest represents a request to create a new Task
+type CreateTaskRequest struct {
 	TaskBase
 
-	Assignee  int64   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
-	Followers []int64 `json:"followers,omitempty"` // Array of users following this task.
+	Assignee  string   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
+	Followers []string `json:"followers,omitempty"` // Array of users following this task.
 
-	Workspace    int64                 `json:"workspace,omitempty"`
-	Parent       int64                 `json:"parent,omitempty"`
-	Projects     []int64               `json:"projects,omitempty"`
-	Memberships  []*Membership         `json:"memberships,omitempty"`
-	Tags         []int64               `json:"tags,omitempty"`
-	CustomFields map[int64]interface{} `json:"custom_fields,omitempty"`
+	Workspace    string                 `json:"workspace,omitempty"`
+	Parent       string                 `json:"parent,omitempty"`
+	Projects     []string               `json:"projects,omitempty"`
+	Memberships  []*Membership          `json:"memberships,omitempty"`
+	Tags         []string               `json:"tags,omitempty"`
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
 // Task is the basic object around which many operations in Asana are
@@ -208,44 +208,44 @@ type Task struct {
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
-// Task creates an unexpanded Task object with the given ID
-func (c *Client) Task(id int64) *Task {
+// Task creates an unexpanded Task record stub with the given ID
+func NewTask(id string) *Task {
 	result := &Task{}
-	result.init(id, c)
+	result.ID = id
 	return result
 }
 
 // Expand loads the full details for this Task
-func (t *Task) Expand() error {
-	t.trace("Loading task details for %q", t.Name)
+func (t *Task) Expand(client *Client) error {
+	client.trace("Loading task details for %q", t.Name)
 
 	if t.expanded {
 		return nil
 	}
 
-	_, err := t.client.get(fmt.Sprintf("/tasks/%d", t.ID), nil, t)
+	_, err := client.get(fmt.Sprintf("/tasks/%s", t.ID), nil, t)
 	return err
 }
 
 // Update applies new values to a Task record
-func (t *Task) Update(update *TaskBase) error {
-	t.trace("Updating task %q", t.Name)
+func (t *Task) Update(client *Client, update *TaskBase) error {
+	client.trace("Updating task %q", t.Name)
 
-	err := t.client.put(fmt.Sprintf("/tasks/%d", t.ID), update, t)
+	err := client.put(fmt.Sprintf("/tasks/%s", t.ID), update, t)
 	return err
 }
 
 // AddProjectRequest defines the location a task should be added to a project
 type AddProjectRequest struct {
-	Project      int64 // Required: The project to add the task to.
-	InsertAfter  int64 // A task in the project to insert the task after, or -1 to insert at the beginning of the list.
-	InsertBefore int64 // A task in the project to insert the task before, or -1 to insert at the end of the list.
-	Section      int64 // A section in the project to insert the task into. The task will be inserted at the bottom of the section.
+	Project      string // Required: The project to add the task to.
+	InsertAfter  string // A task in the project to insert the task after, or -1 to insert at the beginning of the list.
+	InsertBefore string // A task in the project to insert the task before, or -1 to insert at the end of the list.
+	Section      string // A section in the project to insert the task into. The task will be inserted at the bottom of the section.
 }
 
 // AddProject adds this task to an existing project at the provided location
-func (t *Task) AddProject(request *AddProjectRequest) error {
-	t.trace("Adding task %q to project %q", t.ID, request.Project)
+func (t *Task) AddProject(client *Client, request *AddProjectRequest) error {
+	client.trace("Adding task %q to project %q", t.ID, request.Project)
 
 	// Custom encoding of Insert fields needed
 	m := map[string]interface{}{
@@ -253,35 +253,35 @@ func (t *Task) AddProject(request *AddProjectRequest) error {
 		"project": request.Project,
 	}
 
-	if request.InsertAfter == -1 {
+	if request.InsertAfter == "" {
 		m["insert_after"] = nil
-	} else if request.InsertBefore == -1 {
+	} else if request.InsertBefore == "" {
 		m["insert_before"] = nil
-	} else if request.InsertAfter > 0 {
+	} else if request.InsertAfter != "" {
 		m["insert_after"] = request.InsertAfter
-	} else if request.InsertBefore > 0 {
+	} else if request.InsertBefore != "" {
 		m["insert_before"] = request.InsertBefore
 	}
 
-	if request.Section > 0 {
+	if request.Section != "" {
 		m["section"] = request.Section
 	}
 
-	err := t.client.post(fmt.Sprintf("/tasks/%d/addProject", t.ID), m, nil)
+	err := client.post(fmt.Sprintf("/tasks/%s/addProject", t.ID), m, nil)
 	return err
 }
 
 // SetParentRequest changes the parent of a task. Each task may only be a subtask of a single parent, or no parent task at all.
 // When using insert_before and insert_after, at most one of those two options can be specified, and they must already be subtasks of the parent.
 type SetParentRequest struct {
-	Parent       int64 // Required: The new parent of the task, or null for no parent.
-	InsertAfter  int64 // A subtask of the parent to insert the task after, or -1 to insert at the beginning of the list.
-	InsertBefore int64 // A subtask of the parent to insert the task before, or -1 to insert at the end of the list.
+	Parent       string // Required: The new parent of the task, or null for no parent.
+	InsertAfter  string // A subtask of the parent to insert the task after, or "" to insert at the beginning of the list.
+	InsertBefore string // A subtask of the parent to insert the task before, or "" to insert at the end of the list.
 }
 
 // SetParent changes the parent of a task
-func (t *Task) SetParent(request *SetParentRequest) error {
-	t.trace("Setting the parent of task %q to %q", t.ID, request.Parent)
+func (t *Task) SetParent(client *Client, request *SetParentRequest) error {
+	client.trace("Setting the parent of task %q to %q", t.ID, request.Parent)
 
 	// Custom encoding of Insert fields needed
 	m := map[string]interface{}{
@@ -289,53 +289,53 @@ func (t *Task) SetParent(request *SetParentRequest) error {
 		"parent": request.Parent,
 	}
 
-	if request.InsertAfter == -1 {
+	if request.InsertAfter == "" {
 		m["insert_after"] = nil
-	} else if request.InsertBefore == -1 {
+	} else if request.InsertBefore == "" {
 		m["insert_before"] = nil
-	} else if request.InsertAfter > 0 {
+	} else if request.InsertAfter != "" {
 		m["insert_after"] = request.InsertAfter
-	} else if request.InsertBefore > 0 {
+	} else if request.InsertBefore != "" {
 		m["insert_before"] = request.InsertBefore
 	}
 
-	err := t.client.post(fmt.Sprintf("/tasks/%d/setParent", t.ID), m, nil)
+	err := client.post(fmt.Sprintf("/tasks/%s/setParent", t.ID), m, nil)
 	return err
 }
 
 // Tasks returns a list of tasks in this project
-func (p *Project) Tasks(opts ...*Options) ([]*Task, *NextPage, error) {
-	p.trace("Listing tasks in %q", p.Name)
+func (p *Project) Tasks(client *Client, opts ...*Options) ([]*Task, *NextPage, error) {
+	client.trace("Listing tasks in %q", p.Name)
 	var result []*Task
 
 	// Make the request
-	nextPage, err := p.client.get(fmt.Sprintf("/projects/%d/tasks", p.ID), nil, &result, opts...)
+	nextPage, err := client.get(fmt.Sprintf("/projects/%s/tasks", p.ID), nil, &result, opts...)
 	return result, nextPage, err
 }
 
 // Tasks returns a list of tasks in this section. Board view only.
-func (s *Section) Tasks(opts ...*Options) ([]*Task, *NextPage, error) {
-	s.trace("Listing tasks in %q", s.Name)
+func (s *Section) Tasks(client *Client, opts ...*Options) ([]*Task, *NextPage, error) {
+	client.trace("Listing tasks in %q", s.Name)
 	var result []*Task
 
 	// Make the request
-	nextPage, err := s.client.get(fmt.Sprintf("/sections/%d/tasks", s.ID), nil, &result, opts...)
+	nextPage, err := client.get(fmt.Sprintf("/sections/%s/tasks", s.ID), nil, &result, opts...)
 	return result, nextPage, err
 }
 
 // Subtasks returns a list of tasks in this project
-func (t *Task) Subtasks(opts ...*Options) ([]*Task, *NextPage, error) {
-	t.trace("Listing subtasks for %q", t.Name)
+func (t *Task) Subtasks(client *Client, opts ...*Options) ([]*Task, *NextPage, error) {
+	client.trace("Listing subtasks for %q", t.Name)
 
 	var result []*Task
 
 	// Make the request
-	nextPage, err := t.client.get(fmt.Sprintf("/tasks/%d/subtasks", t.ID), nil, &result, opts...)
+	nextPage, err := client.get(fmt.Sprintf("/tasks/%s/subtasks", t.ID), nil, &result, opts...)
 	return result, nextPage, err
 }
 
 // CreateTask creates a new task in the given project
-func (c *Client) CreateTask(task *NewTask) (*Task, error) {
+func (c *Client) CreateTask(task *CreateTaskRequest) (*Task, error) {
 	c.info("Creating task %q", task.Name)
 
 	result := &Task{}
@@ -346,13 +346,13 @@ func (c *Client) CreateTask(task *NewTask) (*Task, error) {
 }
 
 // CreateSubtask creates a new task as a subtask of this task
-func (t *Task) CreateSubtask(task *Task) (*Task, error) {
-	t.info("Creating subtask %q", task.Name)
+func (t *Task) CreateSubtask(client *Client, task *Task) (*Task, error) {
+	client.info("Creating subtask %q", task.Name)
 
 	result := &Task{}
 	result.expanded = true
 
-	err := t.client.post(fmt.Sprintf("/tasks/%d/subtasks", t.ID), task, result)
+	err := client.post(fmt.Sprintf("/tasks/%s/subtasks", t.ID), task, result)
 	return result, err
 }
 

@@ -30,12 +30,12 @@ type Attachment struct {
 }
 
 // Attachments lists all stories attached to a task
-func (t *Task) Attachments(opts ...*Options) ([]*Attachment, *NextPage, error) {
-	t.trace("Listing attachments for %q", t.Name)
+func (t *Task) Attachments(client *Client, opts ...*Options) ([]*Attachment, *NextPage, error) {
+	client.trace("Listing attachments for %q", t.Name)
 
 	var result []*Attachment
 
 	// Make the request
-	nextPage, err := t.client.get(fmt.Sprintf("/tasks/%d/attachments", t.ID), nil, &result, opts...)
+	nextPage, err := client.get(fmt.Sprintf("/tasks/%s/attachments", t.ID), nil, &result, opts...)
 	return result, nextPage, err
 }

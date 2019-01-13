@@ -16,38 +16,38 @@ func ListWorkspaces(c *asana.Client) error {
 
 	for _, workspace := range workspaces {
 		if workspace.IsOrganization {
-			fmt.Printf("Organization %d: %s\n", workspace.ID, workspace.Name)
+			fmt.Printf("Organization %s: %q\n", workspace.ID, workspace.Name)
 		} else {
-			fmt.Printf("Workspace %d: %s\n", workspace.ID, workspace.Name)
+			fmt.Printf("Workspace %s: %q\n", workspace.ID, workspace.Name)
 		}
 	}
 	return nil
 }
 
-func ListProjects(w *asana.Workspace) error {
+func ListProjects(client *asana.Client, w *asana.Workspace) error {
 	// List projects
-	projects, nextPage, err := w.Projects()
+	projects, nextPage, err := w.Projects(client)
 	if err != nil {
 		return err
 	}
 	_ = nextPage
 
 	for _, project := range projects {
-		fmt.Printf("Project %d: %s\n", project.ID, project.Name)
+		fmt.Printf("Project %s: %q\n", project.ID, project.Name)
 	}
 	return nil
 }
 
-func ListTasks(p *asana.Project) error {
+func ListTasks(client *asana.Client, p *asana.Project) error {
 	// List projects
-	tasks, nextPage, err := p.Tasks()
+	tasks, nextPage, err := p.Tasks(client)
 	if err != nil {
 		return err
 	}
 	_ = nextPage
 
 	for _, task := range tasks {
-		fmt.Printf("Task %d: %s\n", task.ID, task.Name)
+		fmt.Printf("Task %s: %q\n", task.ID, task.Name)
 	}
 	return nil
 }

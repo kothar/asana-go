@@ -37,38 +37,38 @@ func (c *Client) CurrentUser() (*User, error) {
 	return result, err
 }
 
-// User retrieves a user record by ID
-func (c *Client) User(id int64) *User {
+// NewUser creates a new user record stub with the given ID
+func NewUser(id string) *User {
 	result := &User{}
-	result.init(id, c)
+	result.ID = id
 	return result
 }
 
 // Expand loads the full details for this User
-func (u *User) Expand() error {
-	u.trace("Loading details for user %q", u.ID)
+func (u *User) Expand(client *Client) error {
+	client.trace("Loading details for user %q", u.ID)
 
 	if u.expanded {
 		return nil
 	}
 
-	_, err := u.client.get(fmt.Sprintf("/users/%d", u.ID), nil, u)
+	_, err := client.get(fmt.Sprintf("/users/%s", u.ID), nil, u)
 	return err
 }
 
 // Users returns the compact records for all users in the organization visible to the authorized user
-func (w *Workspace) Users(options ...*Options) ([]*User, *NextPage, error) {
-	w.trace("Listing users in workspace %d...\n", w.ID)
+func (w *Workspace) Users(client *Client, options ...*Options) ([]*User, *NextPage, error) {
+	client.trace("Listing users in workspace %s...\n", w.ID)
 	var result []*User
 
 	// Make the request
-	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%d/users", w.ID), nil, &result, options...)
+	nextPage, err := client.get(fmt.Sprintf("/workspaces/%s/users", w.ID), nil, &result, options...)
 	return result, nextPage, err
 }
 
 // AllUsers repeatedly pages through all available users in a workspace
-func (w *Workspace) AllUsers(options ...*Options) ([]*User, error) {
-	allUsers := []*User{}
+func (w *Workspace) AllUsers(client *Client, options ...*Options) ([]*User, error) {
+	var allUsers []*User
 	nextPage := &NextPage{}
 
 	var users []*User
@@ -81,7 +81,7 @@ func (w *Workspace) AllUsers(options ...*Options) ([]*User, error) {
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		users, nextPage, err = w.Users(allOptions...)
+		users, nextPage, err = w.Users(client, allOptions...)
 		if err != nil {
 			return nil, err
 		}

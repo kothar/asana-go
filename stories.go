@@ -56,36 +56,36 @@ type Story struct {
 }
 
 // Stories lists all stories attached to a task
-func (t *Task) Stories(opts ...*Options) ([]*Story, *NextPage, error) {
-	t.trace("Listing stories for %q", t.Name)
+func (t *Task) Stories(client *Client, opts ...*Options) ([]*Story, *NextPage, error) {
+	client.trace("Listing stories for %q", t.Name)
 
 	var result []*Story
 
 	// Make the request
-	nextPage, err := t.client.get(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, &result, opts...)
+	nextPage, err := client.get(fmt.Sprintf("/tasks/%s/stories", t.ID), nil, &result, opts...)
 	return result, nextPage, err
 }
 
 // CreateComment adds a comment story to a task
-func (t *Task) CreateComment(story *StoryBase) (*Story, error) {
-	t.info("Creating comment for task %q", t.Name)
+func (t *Task) CreateComment(client *Client, story *StoryBase) (*Story, error) {
+	client.info("Creating comment for task %q", t.Name)
 
 	result := &Story{}
 	result.expanded = true
 
-	err := t.client.post(fmt.Sprintf("/tasks/%d/stories", t.ID), nil, result)
+	err := client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), nil, result)
 	return result, err
 }
 
 // UpdateStory updates the story and returns the full record for the updated story.
 // Only comment stories can have their text updated, and only comment stories and attachment stories can be pinned.
 // Only one of text and html_text can be specified.
-func (s *Story) UpdateStory(story *StoryBase) (*Story, error) {
-	s.info("Updating story %d", s.ID)
+func (s *Story) UpdateStory(client *Client, story *StoryBase) (*Story, error) {
+	client.info("Updating story %s", s.ID)
 
 	result := &Story{}
 	result.expanded = true
 
-	err := s.client.put(fmt.Sprintf("/stories/%d", s.ID), nil, result)
+	err := client.put(fmt.Sprintf("/stories/%s", s.ID), nil, result)
 	return result, err
 }
