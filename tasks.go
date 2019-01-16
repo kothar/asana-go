@@ -84,8 +84,12 @@ type ExternalData struct {
 
 // TaskBase contains the modifiable fields for the Task object
 type TaskBase struct {
-	WithName
-	WithNotes
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
+
+	// More detailed, free-form textual information associated with the
+	// object.
+	Notes string `json:"notes,omitempty"`
 
 	// Scheduling status of this task for the user it is assigned to. This
 	// field can only be set if the assignee is non-null.
@@ -158,14 +162,44 @@ type CreateTaskRequest struct {
 // the fields? Use field selectors to manipulate what data is included in a
 // response.
 type Task struct {
-	Expandable
+
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
 	TaskBase
 
-	WithParent
-	WithDates
-	WithWorkspace
-	WithHearts
-	WithFollowers
+	// Read-only. The task this object is attached to.
+	Parent *Task `json:"parent,omitempty"`
+
+	// Read-only. The time at which this object was created.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+
+	// Read-only. The time at which this object was last modified.
+	//
+	// Note: This does not currently reflect any changes in associations such
+	// as tasks or comments that may have been added or removed from the
+	// object.
+	ModifiedAt *time.Time `json:"modified_at,omitempty"`
+
+	// Create-only. The workspace or organization this object is associated
+	// with. Once created, objects cannot be moved to a different workspace.
+	// This attribute can only be specified at creation time.
+	Workspace *Workspace `json:"workspace,omitempty"`
+
+	// True if the object is hearted by the authorized user, false if not.
+	Hearted bool `json:"hearted,omitempty"`
+
+	// Read-only. Array of users who have hearted this object.
+	Hearts []*User `json:"hearts,omitempty"`
+
+	// Read-only. The number of users who have hearted this object.
+	NumHearts int32 `json:"num_hearts,omitempty"`
+
+	// Read-only. Array of users following this task. Followers are a
+	// subset of members who receive all notifications for a project, the
+	// default notification setting when adding members to a project in-
+	// product.
+	Followers []*User `json:"followers,omitempty"`
 
 	// User to which this task is assigned, or null if the task is unassigned.
 	Assignee *User `json:"assignee,omitempty"`
@@ -208,20 +242,9 @@ type Task struct {
 	Tags []*Tag `json:"tags,omitempty"`
 }
 
-// Task creates an unexpanded Task record stub with the given ID
-func NewTask(id string) *Task {
-	result := &Task{}
-	result.ID = id
-	return result
-}
-
-// Expand loads the full details for this Task
-func (t *Task) Expand(client *Client) error {
+// Fetch loads the full details for this Task
+func (t *Task) Fetch(client *Client) error {
 	client.trace("Loading task details for %q", t.Name)
-
-	if t.expanded {
-		return nil
-	}
 
 	_, err := client.get(fmt.Sprintf("/tasks/%s", t.ID), nil, t)
 	return err
@@ -339,7 +362,6 @@ func (c *Client) CreateTask(task *CreateTaskRequest) (*Task, error) {
 	c.info("Creating task %q", task.Name)
 
 	result := &Task{}
-	result.expanded = true
 
 	err := c.post("/tasks", task, result)
 	return result, err
@@ -350,7 +372,6 @@ func (t *Task) CreateSubtask(client *Client, task *Task) (*Task, error) {
 	client.info("Creating subtask %q", task.Name)
 
 	result := &Task{}
-	result.expanded = true
 
 	err := client.post(fmt.Sprintf("/tasks/%s/subtasks", t.ID), task, result)
 	return result, err

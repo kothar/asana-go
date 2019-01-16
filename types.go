@@ -35,108 +35,10 @@ func (d *Date) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
-// WithID is a mixin for objects with an ID
-type WithID struct {
-	// Read-only. Globally unique ID of the object
-	ID string `json:"gid,omitempty"`
-}
-
-// HasID objects have string GIDs
-type HasID interface {
-	GetID() string
-}
-
-// GetID returns the ID of an object
-func (a *WithID) GetID() string {
-	return a.ID
-}
-
-// Marks whether an object is partially loaded
-type Expandable struct {
-	WithID
-
-	expanded bool
-}
-
 // Validator types have a Validate method which is called before posting the
 // data to the API
 type Validator interface {
 	Validate() error
-}
-
-// WithName is a mixin for objects with a human-readable name
-type WithName struct {
-	// Read-only. The name of the object.
-	Name string `json:"name,omitempty"`
-}
-
-// WithParent is a mixin for objects which are children of a Task object
-type WithParent struct {
-	// Read-only. The task this object is attached to.
-	Parent *Task `json:"parent,omitempty"`
-}
-
-// WithCreated is a mixin for objects with a creation date
-type WithCreated struct {
-	// Read-only. The time at which this object was created.
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-}
-
-// WithDates is a mixin for objects with creation and modification dates
-type WithDates struct {
-	WithCreated
-
-	// Read-only. The time at which this object was last modified.
-	//
-	// Note: This does not currently reflect any changes in associations such
-	// as tasks or comments that may have been added or removed from the
-	// object.
-	ModifiedAt *time.Time `json:"modified_at,omitempty"`
-}
-
-// WithNotes is a mixin for objects with notes attached
-type WithNotes struct {
-	// More detailed, free-form textual information associated with the
-	// object.
-	Notes string `json:"notes,omitempty"`
-}
-
-// WithWorkspace is a mixin for objects which define the workspace they belong to
-type WithWorkspace struct {
-	// Create-only. The workspace or organization this object is associated
-	// with. Once created, objects cannot be moved to a different workspace.
-	// This attribute can only be specified at creation time.
-	Workspace *Workspace `json:"workspace,omitempty"`
-}
-
-// WithHearts is a mixin for objects which may be 'hearted'
-type WithHearts struct {
-	// True if the object is hearted by the authorized user, false if not.
-	Hearted bool `json:"hearted,omitempty"`
-
-	// Read-only. Array of users who have hearted this object.
-	Hearts []*User `json:"hearts,omitempty"`
-
-	// Read-only. The number of users who have hearted this object.
-	NumHearts int32 `json:"num_hearts,omitempty"`
-}
-
-// WithFollowers is a mixin for objects which may have followers
-type WithFollowers struct {
-	// Read-only. Array of users following this project. Followers are a
-	// subset of members who receive all notifcations for a project, the
-	// default notification setting when adding members to a project in-
-	// product.
-	Followers []*User `json:"followers,omitempty"`
-}
-
-// WithColor is a mixin for objects with a color field
-type WithColor struct {
-	// Color of the object. Must be either null or one of: dark-pink, dark-
-	// green, dark-blue, dark-red, dark-teal, dark-brown, dark-orange, dark-
-	// purple, dark-warm-gray, light-pink, light-green, light-blue, light-red,
-	// light-teal, light-yellow, light-orange, light-purple, light-warm-gray.
-	Color string `json:"color,omitempty"`
 }
 
 // Options - In addition to providing fields and their values in a request,

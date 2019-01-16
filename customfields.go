@@ -1,10 +1,17 @@
 package asana
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type EnumValue struct {
-	WithID
-	WithName
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
+
 	Enabled bool   `json:"enabled"`
 	Color   string `json:"color"`
 }
@@ -23,10 +30,14 @@ const (
 // Fields developer documentation for more information about how custom fields
 // relate to various resources in Asana.
 type CustomField struct {
-	Expandable
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
 
-	WithName
-	WithCreated
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
+
+	// Read-only. The time at which this object was created.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 
 	// The type of the custom field. Must be one of the given values:
 	// 'text', 'enum', 'number'
@@ -43,7 +54,8 @@ type CustomField struct {
 }
 
 type CustomFieldSetting struct {
-	WithID
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
 
 	CustomField *CustomField `json:"custom_field"`
 
@@ -73,20 +85,9 @@ type CustomFieldValue struct {
 	EnumValue *EnumValue `json:"enum_value,omitempty"`
 }
 
-// NewCustomField creates a custom field record with the given ID
-func NewCustomField(id string) *CustomField {
-	result := &CustomField{}
-	result.ID = id
-	return result
-}
-
-// Expand loads the full details for this CustomField
-func (f *CustomField) Expand(client *Client) error {
+// Fetch loads the full details for this CustomField
+func (f *CustomField) Fetch(client *Client) error {
 	client.trace("Loading details for custom field %q", f.ID)
-
-	if f.expanded {
-		return nil
-	}
 
 	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f)
 	return err

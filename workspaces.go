@@ -19,8 +19,12 @@ import (
 // announcements, you can still reference organizations in any workspace
 // parameter.
 type Workspace struct {
-	Expandable
-	WithName
+
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
 
 	// Whether the workspace is an organization.
 	IsOrganization bool `json:"is_organization,omitempty"`
@@ -29,20 +33,9 @@ type Workspace struct {
 	EmailDomains []string `json:"email_domains,omitempty"`
 }
 
-// NewWorkspace creates a new Workspace record stub with the given ID
-func NewWorkspace(id string) *Workspace {
-	result := &Workspace{}
-	result.ID = id
-	return result
-}
-
-// Expand loads the full details for this Workspace
-func (w *Workspace) Expand(client *Client) error {
+// Fetch loads the full details for this Workspace
+func (w *Workspace) Fetch(client *Client) error {
 	client.trace("Loading details for workspace %s\n", w.ID)
-
-	if w.expanded {
-		return nil
-	}
 
 	_, err := client.get(fmt.Sprintf("/workspaces/%s", w.ID), nil, w)
 	return err

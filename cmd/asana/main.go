@@ -63,14 +63,14 @@ func main() {
 			}
 
 			for _, w := range options.Workspace {
-				workspace := asana.NewWorkspace(w)
+				workspace := &asana.Workspace{ID: w}
 				check(util.ListProjects(client, workspace))
 			}
 			return
 		}
 
 		for _, p := range options.Project {
-			project := asana.NewProject(p)
+			project := &asana.Project{ID: p}
 
 			check(util.ListTasks(client, project))
 		}
@@ -78,8 +78,8 @@ func main() {
 	}
 
 	for _, t := range options.Task {
-		task := asana.NewTask(t)
-		check(task.Expand(client))
+		task := &asana.Task{ID: t}
+		check(task.Fetch(client))
 
 		fmt.Printf("Task %s: %q\n", task.ID, task.Name)
 		fmt.Printf("  Completed: %v\n", task.Completed)

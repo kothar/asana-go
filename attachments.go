@@ -1,15 +1,25 @@
 package asana
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Attachment represents any file attached to a task in Asana,
 // whether it’s an uploaded file or one associated via a third-party service
 // such as Dropbox or Google Drive.
 type Attachment struct {
-	Expandable
-	WithName
-	WithParent
-	WithCreated
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
+
+	// Read-only. The task this object is attached to.
+	Parent *Task `json:"parent,omitempty"`
+
+	// Read-only. The time at which this object was created.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 
 	// Read-only. The URL containing the content of the attachment.
 	//

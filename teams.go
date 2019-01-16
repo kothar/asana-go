@@ -7,26 +7,19 @@ import (
 // Team is used to group related projects and people together within an
 // organization. Each project in an organization is associated with a team.
 type Team struct {
-	Expandable
-	WithName
+
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
 
 	Organization *Workspace `json:"organization,omitempty"`
 }
 
-// NewTeam creates a Team record stub with the given ID
-func NewTeam(id string) *Team {
-	result := &Team{}
-	result.ID = id
-	return result
-}
-
-// Expand loads the full details for this Team
-func (t *Team) Expand(client *Client) error {
+// Fetch loads the full details for this Team
+func (t *Team) Fetch(client *Client) error {
 	client.trace("Loading team details for %q\n", t.Name)
-
-	if t.expanded {
-		return nil
-	}
 
 	// Use fields options to request Organization field which is not returned by default
 	_, err := client.get(fmt.Sprintf("/teams/%s", t.ID), nil, t, Fields(*t))

@@ -1,9 +1,13 @@
 package asana
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type SectionBase struct {
-	WithName
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
 }
 
 // A Section is a subdivision of a project that groups tasks together. It can either be
@@ -15,28 +19,21 @@ type SectionBase struct {
 // The ‘memberships’ property when getting a task will return the information for the
 // section or the column under ‘section’ in the response.
 type Section struct {
-	Expandable
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
 	SectionBase
-	WithCreated
+
+	// Read-only. The time at which this object was created.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
 
 	// Read-only. The project which contains the section.
 	Project string `json:"project,omitempty"`
 }
 
-// Section creates an unexpanded Section object with the given ID
-func NewSection(id string) *Section {
-	result := &Section{}
-	result.ID = id
-	return result
-}
-
-// Expand loads the full details for this Section
-func (s *Section) Expand(client *Client) error {
+// Fetch loads the full details for this Section
+func (s *Section) Fetch(client *Client) error {
 	client.trace("Loading section details for %q", s.Name)
-
-	if s.expanded {
-		return nil
-	}
 
 	_, err := client.get(fmt.Sprintf("/sections/%s", s.ID), nil, s)
 	return err
@@ -57,7 +54,6 @@ func (p *Project) CreateSection(client *Client, section *SectionBase) (*Section,
 	client.info("Creating section %q", section.Name)
 
 	result := &Section{}
-	result.expanded = true
 
 	err := client.post(fmt.Sprintf("projects/%s/sections", p.ID), section, result)
 	return result, err

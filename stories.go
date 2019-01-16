@@ -2,6 +2,7 @@ package asana
 
 import (
 	"fmt"
+	"time"
 )
 
 // StoryBase contains the text of a story, as used when creating a new comment
@@ -34,11 +35,22 @@ type StoryBase struct {
 // Stories are a form of history in the system, and as such they are read-
 // only. Once generated, it is not possible to modify a story.
 type Story struct {
-	Expandable
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
 	StoryBase
 
-	WithCreated
-	WithHearts
+	// Read-only. The time at which this object was created.
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+
+	// True if the object is hearted by the authorized user, false if not.
+	Hearted bool `json:"hearted,omitempty"`
+
+	// Read-only. Array of users who have hearted this object.
+	Hearts []*User `json:"hearts,omitempty"`
+
+	// Read-only. The number of users who have hearted this object.
+	NumHearts int32 `json:"num_hearts,omitempty"`
 
 	// The user who created the story.
 	CreatedBy *User `json:"created_by,omitempty"`
@@ -71,7 +83,6 @@ func (t *Task) CreateComment(client *Client, story *StoryBase) (*Story, error) {
 	client.info("Creating comment for task %q", t.Name)
 
 	result := &Story{}
-	result.expanded = true
 
 	err := client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), nil, result)
 	return result, err
@@ -84,7 +95,6 @@ func (s *Story) UpdateStory(client *Client, story *StoryBase) (*Story, error) {
 	client.info("Updating story %s", s.ID)
 
 	result := &Story{}
-	result.expanded = true
 
 	err := client.put(fmt.Sprintf("/stories/%s", s.ID), nil, result)
 	return result, err

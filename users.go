@@ -9,8 +9,11 @@ import "fmt"
 // However, the special string identifier me can be used anywhere a user ID is
 // accepted, to refer to the current authenticated user.
 type User struct {
-	Expandable
-	WithName
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
 
 	// Read-only. The user’s email address.
 	Email string `json:"email,omitempty"`
@@ -37,20 +40,9 @@ func (c *Client) CurrentUser() (*User, error) {
 	return result, err
 }
 
-// NewUser creates a new user record stub with the given ID
-func NewUser(id string) *User {
-	result := &User{}
-	result.ID = id
-	return result
-}
-
-// Expand loads the full details for this User
-func (u *User) Expand(client *Client) error {
+// Fetch loads the full details for this User
+func (u *User) Fetch(client *Client) error {
 	client.trace("Loading details for user %q", u.ID)
-
-	if u.expanded {
-		return nil
-	}
 
 	_, err := client.get(fmt.Sprintf("/users/%s", u.ID), nil, u)
 	return err
