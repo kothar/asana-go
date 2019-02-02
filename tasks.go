@@ -261,8 +261,8 @@ func (t *Task) Update(client *Client, update *TaskBase) error {
 // AddProjectRequest defines the location a task should be added to a project
 type AddProjectRequest struct {
 	Project      string // Required: The project to add the task to.
-	InsertAfter  string // A task in the project to insert the task after, or -1 to insert at the beginning of the list.
-	InsertBefore string // A task in the project to insert the task before, or -1 to insert at the end of the list.
+	InsertAfter  string // A task in the project to insert the task after, or "-" to insert at the beginning of the list.
+	InsertBefore string // A task in the project to insert the task before, or "-" to insert at the end of the list.
 	Section      string // A section in the project to insert the task into. The task will be inserted at the bottom of the section.
 }
 
@@ -276,12 +276,14 @@ func (t *Task) AddProject(client *Client, request *AddProjectRequest) error {
 		"project": request.Project,
 	}
 
-	if request.InsertAfter == "" {
+	if request.InsertAfter == "-" {
 		m["insert_after"] = nil
-	} else if request.InsertBefore == "" {
-		m["insert_before"] = nil
 	} else if request.InsertAfter != "" {
 		m["insert_after"] = request.InsertAfter
+	}
+
+	if request.InsertBefore == "-" {
+		m["insert_before"] = nil
 	} else if request.InsertBefore != "" {
 		m["insert_before"] = request.InsertBefore
 	}
