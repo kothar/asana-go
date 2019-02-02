@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"log"
+	"mime"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 
 	"bitbucket.org/mikehouston/asana-go"
 	"bitbucket.org/mikehouston/asana-go/util"
@@ -17,6 +20,8 @@ var options struct {
 	Workspace []string `long:"workspace" short:"w" description:"Workspace to access"`
 	Project   []string `long:"project" short:"p" description:"Project to access"`
 	Task      []string `long:"task" short:"t" description:"Task to access"`
+
+	Attach string `long:"attach" description:"Attach a file to a task"`
 
 	Debug   bool   `short:"d" long:"debug" description:"Show debug information"`
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose output"`
@@ -82,6 +87,21 @@ func main() {
 		check(task.Fetch(client))
 
 		fmt.Printf("Task %s: %q\n", task.ID, task.Name)
+		if options.Attach != "" {
+			f, err := os.Open(options.Attach)
+			check(err)
+			defer f.Close()
+
+			a, err := task.CreateAttachment(client, &asana.NewAttachment{
+				Reader:      f,
+				FileName:    f.Name(),
+				ContentType: mime.TypeByExtension(filepath.Ext(f.Name())),
+			})
+			check(err)
+			fmt.Printf("Attachment added: %+v", a)
+			return
+		}
+
 		fmt.Printf("  Completed: %v\n", task.Completed)
 		if !task.Completed {
 			fmt.Printf("  Due: %s\n", task.DueAt)

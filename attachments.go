@@ -2,6 +2,8 @@ package asana
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
+	"io"
 	"time"
 )
 
@@ -39,7 +41,7 @@ type Attachment struct {
 	ViewURL string `json:"view_url,omitempty"`
 }
 
-// Attachments lists all stories attached to a task
+// Attachments lists all attachments attached to a task
 func (t *Task) Attachments(client *Client, opts ...*Options) ([]*Attachment, *NextPage, error) {
 	client.trace("Listing attachments for %q", t.Name)
 
@@ -48,4 +50,21 @@ func (t *Task) Attachments(client *Client, opts ...*Options) ([]*Attachment, *Ne
 	// Make the request
 	nextPage, err := client.get(fmt.Sprintf("/tasks/%s/attachments", t.ID), nil, &result, opts...)
 	return result, nextPage, err
+}
+
+type NewAttachment struct {
+	Reader      io.ReadCloser
+	FileName    string
+	ContentType string
+}
+
+func (t *Task) CreateAttachment(client *Client, request *NewAttachment) (*Attachment, error) {
+	client.trace("Uploading attachment for %q", t.Name)
+
+	result := &Attachment{}
+	err := client.postMultipart(fmt.Sprintf("/tasks/%s/attachments", t.ID), result, "file", request.Reader, request.FileName, request.ContentType)
+	if err != nil {
+		return nil, errors.Wrap(err, "Upload attachment")
+	}
+	return result, nil
 }

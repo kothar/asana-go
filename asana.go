@@ -1,13 +1,18 @@
 // Package asana provides a client for the Asana API
-package asana //import "bitbucket.org/mikehouston/asana-go"
+package asana // import "bitbucket.org/mikehouston/asana-go"
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
+	"strings"
 
 	"github.com/google/go-querystring/query"
 	"github.com/imdario/mergo"
@@ -202,13 +207,71 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 		return errors.Wrap(err, "Request error")
 	}
 
-	request.Header.Add("Body-Type", "application/json")
+	request.Header.Add("Content-Type", "application/json")
 	if c.FastAPI {
 		request.Header.Add("Asana-Fast-Api", "true")
 	}
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return errors.Wrapf(err, "%s error", method)
+	}
+
+	_, err = c.parseResponse(resp, result)
+	return err
+}
+
+// From mime.multipart package ------
+var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
+
+func escapeQuotes(s string) string {
+	return quoteEscaper.Replace(s)
+}
+
+// --------
+
+func (c *Client) postMultipart(path string, result interface{}, field string, r io.ReadCloser, filename string, contentType string) error {
+	// Make request
+	if c.Debug {
+		log.Printf("POST multipart %s\n%s=%s;ContentType=%s", path, field, filename, contentType)
+	}
+	defer r.Close()
+
+	// Write header
+	buffer := &bytes.Buffer{}
+	partWriter := multipart.NewWriter(buffer)
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition",
+		fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+			escapeQuotes(field), escapeQuotes(filename)))
+	h.Set("Content-Type", contentType)
+
+	_, err := partWriter.CreatePart(h)
+	if err != nil {
+		return errors.Wrap(err, "create multipart header")
+	}
+	headerSize := buffer.Len()
+
+	// Write footer
+	if err = partWriter.Close(); err != nil {
+		return errors.Wrap(err, "create multipart footer")
+	}
+
+	// Create request
+	request, err := http.NewRequest(http.MethodPost, c.getURL(path), io.MultiReader(
+		bytes.NewReader(buffer.Bytes()[:headerSize]),
+		r,
+		bytes.NewReader(buffer.Bytes()[headerSize:])))
+	if err != nil {
+		return errors.Wrap(err, "Request error")
+	}
+
+	request.Header.Add("Content-Type", partWriter.FormDataContentType())
+	if c.FastAPI {
+		request.Header.Add("Asana-Fast-Api", "true")
+	}
+	resp, err := c.HTTPClient.Do(request)
+	if err != nil {
+		return errors.Wrapf(err, "POST error")
 	}
 
 	_, err = c.parseResponse(resp, result)
