@@ -84,7 +84,7 @@ func (t *Task) CreateComment(client *Client, story *StoryBase) (*Story, error) {
 
 	result := &Story{}
 
-	err := client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), nil, result)
+	err := client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), story, result)
 	return result, err
 }
 
