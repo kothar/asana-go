@@ -14,6 +14,12 @@ type Team struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
 
+	// The description of the team with formatting as HTML.
+	Description string `json:"description,omitempty"`
+
+	// The description of the team with formatting as HTML.
+	HTMLDescription string `json:"html_description,omitempty"`
+
 	Organization *Workspace `json:"organization,omitempty"`
 }
 

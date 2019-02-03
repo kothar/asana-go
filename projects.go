@@ -27,16 +27,6 @@ type ProjectBase struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
 
-	// More detailed, free-form textual information associated with the
-	// object.
-	Notes string `json:"notes,omitempty"`
-
-	// Color of the object. Must be either null or one of: dark-pink, dark-
-	// green, dark-blue, dark-red, dark-teal, dark-brown, dark-orange, dark-
-	// purple, dark-warm-gray, light-pink, light-green, light-blue, light-red,
-	// light-teal, light-yellow, light-orange, light-purple, light-warm-gray.
-	Color string `json:"color,omitempty"`
-
 	// The current owner of the project, may be null.
 	Owner *User `json:"owner,omitempty"`
 
@@ -48,6 +38,10 @@ type ProjectBase struct {
 	// YYYY-MM-DD.
 	DueDate *Date `json:"due_date,omitempty"`
 
+	// The day on which this project starts. This takes a date with format
+	// YYYY-MM-DD.
+	StartOn *Date `json:"start_on,omitempty"`
+
 	// True if the project is archived, false if not. Archived projects do not
 	// show in the UI by default and may be treated differently for queries.
 	Archived bool `json:"archived,omitempty"`
@@ -56,6 +50,28 @@ type ProjectBase struct {
 	// share this project with other users in this organization without
 	// explicitly checking to see if they have access.
 	Public bool `json:"public,omitempty"`
+
+	// Array of custom field values set on the project for a custom field applied
+	// to a parent portfolio. Take care to avoid confusing these custom field values
+	// with the custom field settings in the custom_field_settings property.
+	//
+	// Please note that the gid returned on each custom field value is identical to
+	// the gid of the custom field, which allows referencing the custom field through
+	// the /custom_fields/{custom_field_gid} endpoint.
+	CustomFields []*CustomFieldValue `json:"custom_fields,omitempty"`
+
+	// Color of the object. Must be either null or one of: dark-pink, dark-
+	// green, dark-blue, dark-red, dark-teal, dark-brown, dark-orange, dark-
+	// purple, dark-warm-gray, light-pink, light-green, light-blue, light-red,
+	// light-teal, light-yellow, light-orange, light-purple, light-warm-gray.
+	Color string `json:"color,omitempty"`
+
+	// More detailed, free-form textual information associated with the
+	// object.
+	Notes string `json:"notes,omitempty"`
+
+	// The notes of the text with formatting as HTML.
+	HTMLNotes string `json:"html_notes,omitempty"`
 
 	// Create-only. The team that this project is shared with. This field only
 	// exists for projects in organizations.
@@ -89,7 +105,6 @@ type CreateProjectRequest struct {
 // project will add them as members if they are not already, removing
 // followers from a project will not affect membership.
 type Project struct {
-
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -124,10 +139,10 @@ type Project struct {
 }
 
 // Fetch loads the full details for this Project
-func (p *Project) Fetch(client *Client) error {
+func (p *Project) Fetch(client *Client, opts ...*Options) error {
 	client.trace("Loading project details for %q", p.Name)
 
-	_, err := client.get(fmt.Sprintf("/projects/%s", p.ID), nil, p)
+	_, err := client.get(fmt.Sprintf("/projects/%s", p.ID), nil, p, opts...)
 	return err
 }
 

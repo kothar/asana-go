@@ -91,6 +91,9 @@ type TaskBase struct {
 	// object.
 	Notes string `json:"notes,omitempty"`
 
+	// The notes of the text with formatting as HTML.
+	HTMLNotes string `json:"html_notes,omitempty"`
+
 	// Scheduling status of this task for the user it is assigned to. This
 	// field can only be set if the assignee is non-null.
 	AssigneeStatus string `json:"assignee_status,omitempty"`
