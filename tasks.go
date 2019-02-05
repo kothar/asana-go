@@ -141,12 +141,17 @@ type CreateTaskRequest struct {
 	Assignee  string   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
 	Followers []string `json:"followers,omitempty"` // Array of users following this task.
 
-	Workspace    string                 `json:"workspace,omitempty"`
-	Parent       string                 `json:"parent,omitempty"`
-	Projects     []string               `json:"projects,omitempty"`
-	Memberships  []*Membership          `json:"memberships,omitempty"`
-	Tags         []string               `json:"tags,omitempty"`
-	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+	Workspace    string              `json:"workspace,omitempty"`
+	Parent       string              `json:"parent,omitempty"`
+	Projects     []string            `json:"projects,omitempty"`
+	Memberships  []*CreateMembership `json:"memberships,omitempty"`
+	Tags         []string            `json:"tags,omitempty"`
+	CustomFields map[string]string   `json:"custom_fields,omitempty"`
+}
+
+type CreateMembership struct {
+	Project string `json:"project"`
+	Section string `json:"section"`
 }
 
 // Task is the basic object around which many operations in Asana are
@@ -165,7 +170,6 @@ type CreateTaskRequest struct {
 // the fields? Use field selectors to manipulate what data is included in a
 // response.
 type Task struct {
-
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -380,6 +384,12 @@ func (t *Task) CreateSubtask(client *Client, task *Task) (*Task, error) {
 
 	err := client.post(fmt.Sprintf("/tasks/%s/subtasks", t.ID), task, result)
 	return result, err
+}
+
+func (t *Task) Delete(client *Client) error {
+	client.info("Deleting task %q", t.Name)
+
+	return client.delete(fmt.Sprintf("/tasks/%s", t.ID))
 }
 
 // QueryTasks returns the compact task records for some filtered set of tasks.

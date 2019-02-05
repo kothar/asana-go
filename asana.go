@@ -165,6 +165,10 @@ func (c *Client) put(path string, data, result interface{}, opts ...*Options) er
 	return c.do(http.MethodPut, path, data, result, opts...)
 }
 
+func (c *Client) delete(path string, opts ...*Options) error {
+	return c.do(http.MethodDelete, path, nil, nil, opts...)
+}
+
 func (c *Client) do(method, path string, data, result interface{}, opts ...*Options) error {
 	// Prepare options
 	var options *Options

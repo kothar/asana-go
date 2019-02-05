@@ -27,9 +27,6 @@ type ProjectBase struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
 
-	// The current owner of the project, may be null.
-	Owner *User `json:"owner,omitempty"`
-
 	// A description of the project’s status containing a color (must be
 	// either null or one of: green, yellow, red) and a short description.
 	CurrentStatus *ProjectStatus `json:"current_status,omitempty"`
@@ -51,15 +48,6 @@ type ProjectBase struct {
 	// explicitly checking to see if they have access.
 	Public bool `json:"public,omitempty"`
 
-	// Array of custom field values set on the project for a custom field applied
-	// to a parent portfolio. Take care to avoid confusing these custom field values
-	// with the custom field settings in the custom_field_settings property.
-	//
-	// Please note that the gid returned on each custom field value is identical to
-	// the gid of the custom field, which allows referencing the custom field through
-	// the /custom_fields/{custom_field_gid} endpoint.
-	CustomFields []*CustomFieldValue `json:"custom_fields,omitempty"`
-
 	// Color of the object. Must be either null or one of: dark-pink, dark-
 	// green, dark-blue, dark-red, dark-teal, dark-brown, dark-orange, dark-
 	// purple, dark-warm-gray, light-pink, light-green, light-blue, light-red,
@@ -73,10 +61,6 @@ type ProjectBase struct {
 	// The notes of the text with formatting as HTML.
 	HTMLNotes string `json:"html_notes,omitempty"`
 
-	// Create-only. The team that this project is shared with. This field only
-	// exists for projects in organizations.
-	Team *Team `json:"team,omitempty"`
-
 	// The layout (board or list view) of the project.
 	Layout Layout `json:"layout,omitempty"`
 }
@@ -85,8 +69,10 @@ type ProjectBase struct {
 type CreateProjectRequest struct {
 	ProjectBase
 
-	Workspace string `json:"workspace,omitempty"`
-	Team      string `json:"team,omitempty"`
+	Workspace    string            `json:"workspace,omitempty"`
+	Team         string            `json:"team,omitempty"`
+	Owner        string            `json:"owner,omitempty"`
+	CustomFields map[string]string `json:"custom_fields,omitempty"`
 }
 
 // Project represents a prioritized list of tasks in Asana. It exists in a
@@ -107,6 +93,9 @@ type CreateProjectRequest struct {
 type Project struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
+
+	// The current owner of the project, may be null.
+	Owner *User `json:"owner,omitempty"`
 
 	ProjectBase
 
@@ -133,6 +122,19 @@ type Project struct {
 
 	// Read-only. Array of users who are members of this project.
 	Members []*User `json:"members,omitempty"`
+
+	// Create-only. The team that this project is shared with. This field only
+	// exists for projects in organizations.
+	Team *Team `json:"team,omitempty"`
+
+	// Array of custom field values set on the project for a custom field applied
+	// to a parent portfolio. Take care to avoid confusing these custom field values
+	// with the custom field settings in the custom_field_settings property.
+	//
+	// Please note that the gid returned on each custom field value is identical to
+	// the gid of the custom field, which allows referencing the custom field through
+	// the /custom_fields/{custom_field_gid} endpoint.
+	CustomFields []*CustomFieldValue `json:"custom_fields,omitempty"`
 
 	// Read-only. Array of Custom Field Settings (in compact form).
 	CustomFieldSettings []*CustomFieldSetting `json:"custom_field_settings,omitempty"`
