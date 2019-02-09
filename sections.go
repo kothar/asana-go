@@ -39,6 +39,13 @@ func (s *Section) Fetch(client *Client) error {
 	return err
 }
 
+func (s *Section) Delete(client *Client) error {
+	client.trace("Delete section %s %q", s.ID, s.Name)
+
+	err := client.delete(fmt.Sprintf("/sections/%s", s.ID))
+	return err
+}
+
 // Sections returns a list of sections in this project
 func (p *Project) Sections(client *Client, opts ...*Options) ([]*Section, *NextPage, error) {
 	client.trace("Listing sections in %q", p.Name)
@@ -55,7 +62,7 @@ func (p *Project) CreateSection(client *Client, section *SectionBase) (*Section,
 
 	result := &Section{}
 
-	err := client.post(fmt.Sprintf("projects/%s/sections", p.ID), section, result)
+	err := client.post(fmt.Sprintf("/projects/%s/sections", p.ID), section, result)
 	return result, err
 }
 

@@ -265,6 +265,12 @@ func (t *Task) Update(client *Client, update *TaskBase) error {
 	return err
 }
 
+func (t *Task) Delete(client *Client) error {
+	client.info("Deleting task %q", t.Name)
+
+	return client.delete(fmt.Sprintf("/tasks/%s", t.ID))
+}
+
 // AddProjectRequest defines the location a task should be added to a project
 type AddProjectRequest struct {
 	Project      string // Required: The project to add the task to.
@@ -384,12 +390,6 @@ func (t *Task) CreateSubtask(client *Client, task *Task) (*Task, error) {
 
 	err := client.post(fmt.Sprintf("/tasks/%s/subtasks", t.ID), task, result)
 	return result, err
-}
-
-func (t *Task) Delete(client *Client) error {
-	client.info("Deleting task %q", t.Name)
-
-	return client.delete(fmt.Sprintf("/tasks/%s", t.ID))
 }
 
 // QueryTasks returns the compact task records for some filtered set of tasks.
