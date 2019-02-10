@@ -77,6 +77,7 @@ func main() {
 		for _, p := range options.Project {
 			project := &asana.Project{ID: p}
 
+			check(util.ListSections(client, project))
 			check(util.ListTasks(client, project))
 		}
 		return

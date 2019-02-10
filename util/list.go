@@ -16,9 +16,9 @@ func ListWorkspaces(c *asana.Client) error {
 
 	for _, workspace := range workspaces {
 		if workspace.IsOrganization {
-			fmt.Printf("Organization %s: %q\n", workspace.ID, workspace.Name)
+			fmt.Printf("Organization %s %q\n", workspace.ID, workspace.Name)
 		} else {
-			fmt.Printf("Workspace %s: %q\n", workspace.ID, workspace.Name)
+			fmt.Printf("Workspace %s %q\n", workspace.ID, workspace.Name)
 		}
 	}
 	return nil
@@ -47,7 +47,21 @@ func ListTasks(client *asana.Client, p *asana.Project) error {
 	_ = nextPage
 
 	for _, task := range tasks {
-		fmt.Printf("Task %s: %q\n", task.ID, task.Name)
+		fmt.Printf("Task %s %q\n", task.ID, task.Name)
+	}
+	return nil
+}
+
+func ListSections(client *asana.Client, p *asana.Project) error {
+	// List sections
+	sections, nextPage, err := p.Sections(client)
+	if err != nil {
+		return err
+	}
+	_ = nextPage
+
+	for _, section := range sections {
+		fmt.Printf("Section %s %q\n", section.ID, section.Name)
 	}
 	return nil
 }
