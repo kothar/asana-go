@@ -1,7 +1,6 @@
 package asana
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -66,36 +65,34 @@ type CustomFieldSetting struct {
 }
 
 type AddCustomFieldSettingRequest struct {
-	CustomField  string
-	Important    bool
-	InsertBefore string
-	InsertAfter  string
-}
-
-func (r *AddCustomFieldSettingRequest) MarshalJSON() ([]byte, error) {
-	m := map[string]interface{}{}
-	m["custom_field"] = r.CustomField
-	m["is_important"] = r.Important
-
-	if r.InsertAfter == "-" {
-		m["insert_after"] = nil
-	} else if r.InsertAfter != "" {
-		m["insert_after"] = r.InsertAfter
-	}
-
-	if r.InsertBefore == "-" {
-		m["insert_before"] = nil
-	} else if r.InsertBefore != "" {
-		m["insert_before"] = r.InsertBefore
-	}
-	return json.Marshal(m)
+	CustomField  string `json:"custom_field"`
+	Important    bool   `json:"is_important,omitempty"`
+	InsertBefore string `json:"insert_before,omitempty"`
+	InsertAfter  string `json:"insert_after,omitempty"`
 }
 
 func (p *Project) AddCustomFieldSetting(client *Client, request *AddCustomFieldSettingRequest) (*CustomFieldSetting, error) {
 	client.trace("Attach custom field %q to project %q", request.CustomField, p.ID)
 
+	// Custom request encoding
+	m := map[string]interface{}{}
+	m["custom_field"] = request.CustomField
+	m["is_important"] = request.Important
+
+	if request.InsertAfter == "-" {
+		m["insert_after"] = nil
+	} else if request.InsertAfter != "" {
+		m["insert_after"] = request.InsertAfter
+	}
+
+	if request.InsertBefore == "-" {
+		m["insert_before"] = nil
+	} else if request.InsertBefore != "" {
+		m["insert_before"] = request.InsertBefore
+	}
+
 	result := &CustomFieldSetting{}
-	err := client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), request, result)
+	err := client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), m, result)
 	return result, err
 }
 
