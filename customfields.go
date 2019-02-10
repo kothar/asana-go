@@ -1,6 +1,7 @@
 package asana
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -60,6 +61,42 @@ type CustomFieldSetting struct {
 	CustomField *CustomField `json:"custom_field"`
 
 	Project *Project `json:"project,omitempty"`
+
+	Important bool `json:"is_important,omitempty"`
+}
+
+type AddCustomFieldSettingRequest struct {
+	CustomField  string
+	Important    bool
+	InsertBefore string
+	InsertAfter  string
+}
+
+func (r *AddCustomFieldSettingRequest) MarshalJSON() ([]byte, error) {
+	m := map[string]interface{}{}
+	m["custom_field"] = r.CustomField
+	m["is_important"] = r.Important
+
+	if r.InsertAfter == "-" {
+		m["insert_after"] = nil
+	} else if r.InsertAfter != "" {
+		m["insert_after"] = r.InsertAfter
+	}
+
+	if r.InsertBefore == "-" {
+		m["insert_before"] = nil
+	} else if r.InsertBefore != "" {
+		m["insert_before"] = r.InsertBefore
+	}
+	return json.Marshal(m)
+}
+
+func (p *Project) AddCustomFieldSetting(client *Client, request *AddCustomFieldSettingRequest) (*CustomFieldSetting, error) {
+	client.trace("Attach custom field %q to project %q", request.CustomField, p.ID)
+
+	result := &CustomFieldSetting{}
+	err := client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), request, result)
+	return result, err
 }
 
 // When a custom field is associated with a project, tasks in that project can
