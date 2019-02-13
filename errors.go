@@ -49,6 +49,13 @@ func (err *Error) withType(statusCode int, errorType string) *Error {
 	return err
 }
 
+func IsRecoverableError(err error) bool {
+	if e, ok := err.(*Error); ok {
+		return e.StatusCode == 500
+	}
+	return false
+}
+
 // IsNotFoundError checks if the provided error represents a 404 not found response from the API
 func IsNotFoundError(err error) bool {
 	if e, ok := err.(*Error); ok {
