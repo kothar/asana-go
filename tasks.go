@@ -1,6 +1,7 @@
 package asana
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -304,7 +305,7 @@ func (t *Task) AddProject(client *Client, request *AddProjectRequest) error {
 		m["section"] = request.Section
 	}
 
-	err := client.post(fmt.Sprintf("/tasks/%s/addProject", t.ID), m, nil)
+	err := client.post(fmt.Sprintf("/tasks/%s/addProject", t.ID), m, &json.RawMessage{})
 	return err
 }
 
