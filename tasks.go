@@ -285,7 +285,6 @@ func (t *Task) AddProject(client *Client, request *AddProjectRequest) error {
 
 	// Custom encoding of Insert fields needed
 	m := map[string]interface{}{
-		"task":    t.ID,
 		"project": request.Project,
 	}
 
