@@ -69,10 +69,10 @@ type ProjectBase struct {
 type CreateProjectRequest struct {
 	ProjectBase
 
-	Workspace    string            `json:"workspace,omitempty"`
-	Team         string            `json:"team,omitempty"`
-	Owner        string            `json:"owner,omitempty"`
-	CustomFields map[string]string `json:"custom_fields,omitempty"`
+	Workspace    string                 `json:"workspace,omitempty"`
+	Team         string                 `json:"team,omitempty"`
+	Owner        string                 `json:"owner,omitempty"`
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
 // Project represents a prioritized list of tasks in Asana. It exists in a

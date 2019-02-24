@@ -85,11 +85,12 @@ type ExternalData struct {
 
 // TaskBase contains the modifiable fields for the Task object
 type TaskBase struct {
-	// Read-only. The name of the object.
+	// Name of the task. This is generally a short sentence fragment that
+	// fits on a line in the UI for maximum readability. However, it can be longer.
 	Name string `json:"name,omitempty"`
 
 	// More detailed, free-form textual information associated with the
-	// object.
+	// task.
 	Notes string `json:"notes,omitempty"`
 
 	// The notes of the text with formatting as HTML.
@@ -142,12 +143,12 @@ type CreateTaskRequest struct {
 	Assignee  string   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
 	Followers []string `json:"followers,omitempty"` // Array of users following this task.
 
-	Workspace    string              `json:"workspace,omitempty"`
-	Parent       string              `json:"parent,omitempty"`
-	Projects     []string            `json:"projects,omitempty"`
-	Memberships  []*CreateMembership `json:"memberships,omitempty"`
-	Tags         []string            `json:"tags,omitempty"`
-	CustomFields map[string]string   `json:"custom_fields,omitempty"`
+	Workspace    string                 `json:"workspace,omitempty"`
+	Parent       string                 `json:"parent,omitempty"`
+	Projects     []string               `json:"projects,omitempty"`
+	Memberships  []*CreateMembership    `json:"memberships,omitempty"`
+	Tags         []string               `json:"tags,omitempty"`
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
 type CreateMembership struct {
@@ -173,6 +174,11 @@ type CreateMembership struct {
 type Task struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
+
+	// Read-only. The type of task. Different subtypes of tasks retain many of
+	// the same fields and behavior, but may render differently in Asana or
+	// represent tasks with different semantic meaning.
+	ResourceSubtype string `json:"resource_subtype,omitempty"`
 
 	TaskBase
 
@@ -248,6 +254,14 @@ type Task struct {
 	// be specified on creation using just an array of tag IDs. In order to
 	// change tags on an existing task use addTag and removeTag.
 	Tags []*Tag `json:"tags,omitempty"`
+
+	// Read-only. Array of resources referencing tasks that this task depends on.
+	// The objects contain only the ID of the dependency.
+	Dependencies []*Task `json:"dependencies,omitempty"`
+
+	// Read-only. Array of resources referencing tasks that depend on this task.
+	// The objects contain only the ID of the dependent.
+	Dependents []*Task `json:"dependents,omitempty"`
 }
 
 // Fetch loads the full details for this Task
@@ -313,8 +327,8 @@ func (t *Task) AddProject(client *Client, request *AddProjectRequest) error {
 // When using insert_before and insert_after, at most one of those two options can be specified, and they must already be subtasks of the parent.
 type SetParentRequest struct {
 	Parent       string // Required: The new parent of the task, or null for no parent.
-	InsertAfter  string // A subtask of the parent to insert the task after, or "" to insert at the beginning of the list.
-	InsertBefore string // A subtask of the parent to insert the task before, or "" to insert at the end of the list.
+	InsertAfter  string // A subtask of the parent to insert the task after, or "-" to insert at the beginning of the list.
+	InsertBefore string // A subtask of the parent to insert the task before, or "-" to insert at the end of the list.
 }
 
 // SetParent changes the parent of a task
@@ -327,9 +341,9 @@ func (t *Task) SetParent(client *Client, request *SetParentRequest) error {
 		"parent": request.Parent,
 	}
 
-	if request.InsertAfter == "" {
+	if request.InsertAfter == "-" {
 		m["insert_after"] = nil
-	} else if request.InsertBefore == "" {
+	} else if request.InsertBefore == "-" {
 		m["insert_before"] = nil
 	} else if request.InsertAfter != "" {
 		m["insert_after"] = request.InsertAfter
@@ -338,6 +352,36 @@ func (t *Task) SetParent(client *Client, request *SetParentRequest) error {
 	}
 
 	err := client.post(fmt.Sprintf("/tasks/%s/setParent", t.ID), m, nil)
+	return err
+}
+
+// AddDependenciesRequest
+type AddDependenciesRequest struct {
+	// Required: An array of task IDs that this task should depend on.
+	Dependencies []string `json:"dependencies"`
+}
+
+// AddDependencies marks a set of tasks as dependencies of this task, if they
+// are not already dependencies. A task can have at most 15 dependencies.
+func (t *Task) AddDependencies(client *Client, request *AddDependenciesRequest) error {
+	client.trace("Adding dependencies to task %q", t.ID)
+
+	err := client.post(fmt.Sprintf("/tasks/%s/addDependencies", t.ID), request, nil)
+	return err
+}
+
+// AddDependentsRequest
+type AddDependentsRequest struct {
+	// Required: An array of task IDs that this task should depend on.
+	Dependents []string `json:"dependents"`
+}
+
+// AddDependents marks a set of tasks as dependents of this task, if they
+// are not already dependents. A task can have at most 30 dependents.
+func (t *Task) AddDependents(client *Client, request *AddDependentsRequest) error {
+	client.trace("Adding dependents to task %q", t.ID)
+
+	err := client.post(fmt.Sprintf("/tasks/%s/addDependents", t.ID), request, nil)
 	return err
 }
 

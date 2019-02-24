@@ -41,7 +41,7 @@ type CustomField struct {
 
 	// The type of the custom field. Must be one of the given values:
 	// 'text', 'enum', 'number'
-	Type FieldType `json:"type"`
+	ResourceSubtype FieldType `json:"resource_subtype"`
 
 	// Only relevant for custom fields of type ‘Enum’. This array specifies
 	// the possible values which an enum custom field can adopt.
@@ -112,7 +112,7 @@ type CustomFieldValue struct {
 
 	// Custom fields of type number will return a number_value property
 	// containing the number for the field.
-	NumberValue string `json:"number_value,omitempty"`
+	NumberValue float64 `json:"number_value,omitempty"`
 
 	// Custom fields of type enum will return an enum_value property
 	// containing an object that represents the selection of the enum value.
