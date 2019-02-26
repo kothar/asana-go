@@ -44,7 +44,7 @@ func (c *Client) CurrentUser() (*User, error) {
 func (u *User) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for user %q", u.ID)
 
-	_, err := client.get(fmt.Sprintf("/users/%s", u.ID), nil, u, options)
+	_, err := client.get(fmt.Sprintf("/users/%s", u.ID), nil, u, options...)
 	return err
 }
 

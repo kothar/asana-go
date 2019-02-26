@@ -123,7 +123,7 @@ type CustomFieldValue struct {
 func (f *CustomField) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for custom field %q", f.ID)
 
-	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f, options)
+	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f, options...)
 	return err
 }
 

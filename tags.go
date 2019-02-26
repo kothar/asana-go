@@ -53,7 +53,7 @@ type Tag struct {
 func (t *Tag) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for tag %q", t.Name)
 
-	_, err := client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t, options)
+	_, err := client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t, options...)
 	return err
 }
 
