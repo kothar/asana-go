@@ -108,11 +108,11 @@ type CustomFieldValue struct {
 
 	// Custom fields of type text will return a text_value property containing
 	// the string of text for the field.
-	TextValue string `json:"text_value,omitempty"`
+	TextValue *string `json:"text_value,omitempty"`
 
 	// Custom fields of type number will return a number_value property
 	// containing the number for the field.
-	NumberValue float64 `json:"number_value,omitempty"`
+	NumberValue *float64 `json:"number_value,omitempty"`
 
 	// Custom fields of type enum will return an enum_value property
 	// containing an object that represents the selection of the enum value.
