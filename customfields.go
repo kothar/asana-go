@@ -9,11 +9,16 @@ type EnumValue struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
+	EnumValueBase
+
+	Enabled bool `json:"enabled"`
+}
+
+type EnumValueBase struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
 
-	Enabled bool   `json:"enabled"`
-	Color   string `json:"color"`
+	Color string `json:"color"`
 }
 
 type FieldType string
@@ -35,6 +40,9 @@ type CustomField struct {
 
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
+
+	// The description of the custom field.
+	Description string `json:"description,omitempty"`
 
 	// Read-only. The time at which this object was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
@@ -93,6 +101,37 @@ func (p *Project) AddCustomFieldSetting(client *Client, request *AddCustomFieldS
 
 	result := &CustomFieldSetting{}
 	err := client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), m, result)
+	return result, err
+}
+
+type CreateCustomFieldRequest struct {
+	// Required: The workspace to create a custom field in.
+	Workspace string `json:"workspace"`
+
+	// Required: The type of the custom field. Must be one of the given values:
+	// 'text', 'enum', 'number'
+	ResourceSubtype FieldType `json:"resource_subtype"`
+
+	// Required. The name of the object.
+	Name string `json:"name"`
+
+	// The description of the custom field.
+	Description string `json:"description,omitempty"`
+
+	// The number of decimal places for the numerical values.
+	// Required if the custom field is of type ‘number’.
+	Precision int `json:"precision,omitempty"`
+
+	// The discrete values the custom field can assume.
+	// Required if the custom field is of type ‘enum’.
+	EnumOptions []*EnumValueBase `json:"enum_options,omitempty"`
+}
+
+func (c *Client) CreateCustomField(request *CreateCustomFieldRequest) (*CustomField, error) {
+	c.trace("Create custom field %q in workspace %s", request.Name, request.Workspace)
+
+	result := &CustomField{}
+	err := c.post("/custom_fields", request, result)
 	return result, err
 }
 

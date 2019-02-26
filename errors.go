@@ -1,12 +1,14 @@
 package asana
 
 import (
+	"fmt"
+	"github.com/rs/xid"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-func (r *Response) Error(resp *http.Response) error {
+func (r *Response) Error(resp *http.Response, requestID xid.ID) error {
 	var asanaError *Error
 	if r.Errors != nil {
 		asanaError = r.Errors[0].withType(resp.StatusCode, resp.Status)
@@ -15,6 +17,7 @@ func (r *Response) Error(resp *http.Response) error {
 			StatusCode: resp.StatusCode,
 			Type:       resp.Status,
 			Message:    "Unknown error",
+			RequestID:  requestID.String(),
 		}
 	}
 
@@ -36,11 +39,12 @@ type Error struct {
 	Message    string        `json:"message"`
 	Phrase     string        `json:"phrase"`
 	Help       string        `json:"help"`
-	RetryAfter time.Duration `json:"-,omitempty"`
+	RetryAfter time.Duration `json:"-"`
+	RequestID  string        `json:"-"`
 }
 
 func (err Error) Error() string {
-	return err.Type + ": " + err.Message
+	return fmt.Sprintf("%s %s: %s", err.RequestID, err.Type, err.Message)
 }
 
 func (err *Error) withType(statusCode int, errorType string) *Error {

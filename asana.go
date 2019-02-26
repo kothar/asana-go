@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/xid"
 	"io"
 	"io/ioutil"
 	"log"
@@ -91,20 +92,21 @@ func mergeQuery(q url.Values, request interface{}) error {
 }
 
 func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*NextPage, error) {
+	requestID := xid.New()
 
 	// Encode default options
 	if c.Debug {
-		log.Printf("Default options: %+v", c.DefaultOptions)
+		log.Printf("%s Default options: %+v", requestID, c.DefaultOptions)
 	}
 	q, err := query.Values(c.DefaultOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to marshal DefaultOptions to query parameters")
+		return nil, errors.Wrapf(err, "%s Unable to marshal DefaultOptions to query parameters", requestID)
 	}
 
 	// Encode data
 	if data != nil {
 		if c.Debug {
-			log.Printf("Data: %+v", data)
+			log.Printf("%s Data: %+v", requestID, data)
 		}
 
 		// Validate
@@ -122,7 +124,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	// Encode query options
 	for _, options := range opts {
 		if c.Debug {
-			log.Printf("Options: %+v", options)
+			log.Printf("%s Options: %+v", requestID, options)
 		}
 		if err := mergeQuery(q, options); err != nil {
 			return nil, err
@@ -134,22 +136,22 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 
 	// Make request
 	if c.Debug {
-		log.Printf("GET %s", path)
+		log.Printf("%s GET %s", requestID, path)
 	}
 	request, err := http.NewRequest(http.MethodGet, c.getURL(path), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "Request error")
+		return nil, errors.Wrapf(err, "%s Request error", requestID)
 	}
 	if c.FastAPI {
 		request.Header.Add("Asana-Fast-Api", "true")
 	}
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return nil, errors.Wrap(err, "GET error")
+		return nil, errors.Wrapf(err, "%s GET error", requestID)
 	}
 
 	// Parse the result
-	resultData, err := c.parseResponse(resp, result)
+	resultData, err := c.parseResponse(resp, result, requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -171,6 +173,7 @@ func (c *Client) delete(path string, opts ...*Options) error {
 
 func (c *Client) do(method, path string, data, result interface{}, opts ...*Options) error {
 	// Prepare options
+	requestID := xid.New()
 	var options *Options
 	if opts != nil {
 		options = opts[0]
@@ -179,7 +182,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 		options = &Options{}
 	}
 	if err := mergo.Merge(options, c.DefaultOptions); err != nil {
-		return errors.Wrap(err, "unable to merge options")
+		return errors.Wrapf(err, "%s unable to merge options", requestID)
 	}
 
 	// Validate data
@@ -204,7 +207,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 	// Make request
 	if c.Debug {
 		body, _ := json.MarshalIndent(req, "", "  ")
-		log.Printf("%s %s\n%s", method, path, body)
+		log.Printf("%s %s %s\n%s", requestID, method, path, body)
 	}
 	request, err := http.NewRequest(method, c.getURL(path), bytes.NewReader(body))
 	if err != nil {
@@ -220,7 +223,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 		return errors.Wrapf(err, "%s error", method)
 	}
 
-	_, err = c.parseResponse(resp, result)
+	_, err = c.parseResponse(resp, result, requestID)
 	return err
 }
 
@@ -235,8 +238,9 @@ func escapeQuotes(s string) string {
 
 func (c *Client) postMultipart(path string, result interface{}, field string, r io.ReadCloser, filename string, contentType string) error {
 	// Make request
+	requestID := xid.New()
 	if c.Debug {
-		log.Printf("POST multipart %s\n%s=%s;ContentType=%s", path, field, filename, contentType)
+		log.Printf("%s POST multipart %s\n%s=%s;ContentType=%s", requestID, path, field, filename, contentType)
 	}
 	defer r.Close()
 
@@ -251,13 +255,13 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 
 	_, err := partWriter.CreatePart(h)
 	if err != nil {
-		return errors.Wrap(err, "create multipart header")
+		return errors.Wrapf(err, "%s create multipart header", requestID)
 	}
 	headerSize := buffer.Len()
 
 	// Write footer
 	if err = partWriter.Close(); err != nil {
-		return errors.Wrap(err, "create multipart footer")
+		return errors.Wrapf(err, "%s create multipart footer", requestID)
 	}
 
 	// Create request
@@ -266,7 +270,7 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 		r,
 		bytes.NewReader(buffer.Bytes()[headerSize:])))
 	if err != nil {
-		return errors.Wrap(err, "Request error")
+		return errors.Wrapf(err, "%s Request error", requestID)
 	}
 
 	request.Header.Add("Content-Type", partWriter.FormDataContentType())
@@ -275,14 +279,14 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 	}
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return errors.Wrapf(err, "POST error")
+		return errors.Wrapf(err, "%s POST error", requestID)
 	}
 
-	_, err = c.parseResponse(resp, result)
+	_, err = c.parseResponse(resp, result, requestID)
 	return err
 }
 
-func (c *Client) parseResponse(resp *http.Response, result interface{}) (*Response, error) {
+func (c *Client) parseResponse(resp *http.Response, result interface{}, requestID xid.ID) (*Response, error) {
 
 	// Get response body
 	defer resp.Body.Close()
@@ -291,7 +295,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) (*Respon
 		return nil, err
 	}
 	if c.Debug {
-		log.Printf("%s\n%s", resp.Status, body)
+		log.Printf("%s %s\n%s", requestID, resp.Status, body)
 	}
 
 	// Decode the response
@@ -305,12 +309,12 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}) (*Respon
 	case 200: // OK
 	case 201: // Object created
 	default:
-		return nil, value.Error(resp)
+		return nil, value.Error(resp, requestID)
 	}
 
 	// Decode the data field
 	if value.Data == nil {
-		return nil, errors.New("Missing data from response")
+		return nil, errors.Errorf("%s Missing data from response", requestID)
 	}
 
 	return value, c.parseResponseData(value.Data, result)
