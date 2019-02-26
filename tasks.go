@@ -343,7 +343,6 @@ func (t *Task) SetParent(client *Client, request *SetParentRequest) error {
 
 	// Custom encoding of Insert fields needed
 	m := map[string]interface{}{
-		"task":   t.ID,
 		"parent": request.Parent,
 	}
 
@@ -357,7 +356,7 @@ func (t *Task) SetParent(client *Client, request *SetParentRequest) error {
 		m["insert_before"] = request.InsertBefore
 	}
 
-	err := client.post(fmt.Sprintf("/tasks/%s/setParent", t.ID), m, nil)
+	err := client.post(fmt.Sprintf("/tasks/%s/setParent", t.ID), m, &json.RawMessage{})
 	return err
 }
 
@@ -372,7 +371,7 @@ type AddDependenciesRequest struct {
 func (t *Task) AddDependencies(client *Client, request *AddDependenciesRequest) error {
 	client.trace("Adding dependencies to task %q", t.ID)
 
-	err := client.post(fmt.Sprintf("/tasks/%s/addDependencies", t.ID), request, nil)
+	err := client.post(fmt.Sprintf("/tasks/%s/addDependencies", t.ID), request, &json.RawMessage{})
 	return err
 }
 
@@ -387,7 +386,7 @@ type AddDependentsRequest struct {
 func (t *Task) AddDependents(client *Client, request *AddDependentsRequest) error {
 	client.trace("Adding dependents to task %q", t.ID)
 
-	err := client.post(fmt.Sprintf("/tasks/%s/addDependents", t.ID), request, nil)
+	err := client.post(fmt.Sprintf("/tasks/%s/addDependents", t.ID), request, &json.RawMessage{})
 	return err
 }
 
