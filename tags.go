@@ -29,7 +29,6 @@ type TagBase struct {
 // heavily on it. Unlike projects, tags do not provide any ordering on the
 // tasks they are associated with.
 type Tag struct {
-
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -51,10 +50,10 @@ type Tag struct {
 }
 
 // Fetch loads the full details for this Tag
-func (t *Tag) Fetch(client *Client) error {
+func (t *Tag) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for tag %q", t.Name)
 
-	_, err := client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t)
+	_, err := client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t, options)
 	return err
 }
 
