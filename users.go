@@ -41,10 +41,10 @@ func (c *Client) CurrentUser() (*User, error) {
 }
 
 // Fetch loads the full details for this User
-func (u *User) Fetch(client *Client) error {
+func (u *User) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for user %q", u.ID)
 
-	_, err := client.get(fmt.Sprintf("/users/%s", u.ID), nil, u)
+	_, err := client.get(fmt.Sprintf("/users/%s", u.ID), nil, u, options)
 	return err
 }
 
