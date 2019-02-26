@@ -120,10 +120,10 @@ type CustomFieldValue struct {
 }
 
 // Fetch loads the full details for this CustomField
-func (f *CustomField) Fetch(client *Client) error {
+func (f *CustomField) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for custom field %q", f.ID)
 
-	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f)
+	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f, options)
 	return err
 }
 
