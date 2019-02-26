@@ -30,9 +30,9 @@ type StoryBase struct {
 }
 
 type Dates struct {
-	DueOn   *Date `json:"due_on,omitempty"`
-	DueAt   *Date `json:"due_at,omitempty"`
-	StartOn *Date `json:"start_on,omitempty"`
+	DueOn   *Date      `json:"due_on,omitempty"`
+	DueAt   *time.Time `json:"due_at,omitempty"`
+	StartOn *Date      `json:"start_on,omitempty"`
 }
 
 type StorySubtypeFields struct {

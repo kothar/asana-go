@@ -113,6 +113,12 @@ type TaskBase struct {
 	// due_on.
 	DueAt *time.Time `json:"due_at,omitempty"`
 
+	// Date on which this task is due, or null if the task has no start date.
+	// This field takes a date with YYYY-MM-DD format.
+	// Note: due_on or due_at must be present in the request when setting or
+	// unsetting the start_on parameter.
+	StartOn *Date `json:"start_on,omitempty"`
+
 	// Oauth Required. The external field allows you to store app-specific
 	// metadata on tasks, including an id that can be used to retrieve tasks
 	// and a data blob that can store app-specific character strings. Note
