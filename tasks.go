@@ -329,6 +329,18 @@ func (t *Task) AddProject(client *Client, request *AddProjectRequest) error {
 	return err
 }
 
+func (t *Task) RemoveProject(client *Client, projectID string) error {
+	client.trace("Removing task %q from project %q", t.ID, projectID)
+
+	// Custom encoding of Insert fields needed
+	m := map[string]interface{}{
+		"project": projectID,
+	}
+
+	err := client.post(fmt.Sprintf("/tasks/%s/removeProject", t.ID), m, &json.RawMessage{})
+	return err
+}
+
 // SetParentRequest changes the parent of a task. Each task may only be a subtask of a single parent, or no parent task at all.
 // When using insert_before and insert_after, at most one of those two options can be specified, and they must already be subtasks of the parent.
 type SetParentRequest struct {

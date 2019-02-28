@@ -1,6 +1,7 @@
 package asana
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -102,6 +103,18 @@ func (p *Project) AddCustomFieldSetting(client *Client, request *AddCustomFieldS
 	result := &CustomFieldSetting{}
 	err := client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), m, result)
 	return result, err
+}
+
+func (p *Project) RemoveCustomFieldSetting(client *Client, customFieldID string) error {
+	client.trace("Remove custom field %q from project %q", customFieldID, p.ID)
+
+	// Custom request encoding
+	m := map[string]interface{}{
+		"custom_field": customFieldID,
+	}
+
+	err := client.post(fmt.Sprintf("/projects/%s/removeCustomFieldSetting", p.ID), m, &json.RawMessage{})
+	return err
 }
 
 type CreateCustomFieldRequest struct {
