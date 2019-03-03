@@ -128,6 +128,11 @@ type TaskBase struct {
 	// you may use the original object id. See the page on Custom External
 	// Data for more details.
 	External *ExternalData `json:"external,omitempty"`
+
+	// Indicates whether a default task is rendered as bolded and underlined
+	// when viewed in a list of subtasks or in a user’s My Tasks.
+	// Requires that the NewSections deprecation is enabled.
+	IsRenderedAsSeparator bool `json:"is_rendered_as_separator,omitempty"`
 }
 
 // Validate checks the task data and fixes any problems

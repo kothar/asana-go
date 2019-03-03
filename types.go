@@ -51,7 +51,6 @@ type Validator interface {
 // These options can be used in combination in a single request, though some
 // of them may conflict in their impact on the response.
 type Options struct {
-
 	// Provides the response in “pretty” output. In the case of JSON this
 	// means doing proper line breaking and indentation to make it readable.
 	// This will take extra time and increase the response size so it is
@@ -104,4 +103,9 @@ type Options struct {
 	// Note: You can only pass in an offset that was returned to you via a
 	// previously paginated request.
 	Offset string `json:"offset,omitempty" url:"offset,omitempty"`
+
+	// Headers
+	FastAPI bool      `json:"-" url:"-"`
+	Enable  []Feature `json:"-" url:"-"`
+	Disable []Feature `json:"-" url:"-"`
 }

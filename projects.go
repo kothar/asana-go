@@ -75,6 +75,14 @@ type CreateProjectRequest struct {
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
+type SectionMigrationStatus string
+
+const (
+	NotMigrated SectionMigrationStatus = "not_migrated"
+	InProgress  SectionMigrationStatus = "in_progress"
+	Completed   SectionMigrationStatus = "completed"
+)
+
 // Project represents a prioritized list of tasks in Asana. It exists in a
 // single workspace or organization and is accessible to a subset of users in
 // that workspace or organization, depending on its permissions.
@@ -138,6 +146,8 @@ type Project struct {
 
 	// Read-only. Array of Custom Field Settings (in compact form).
 	CustomFieldSettings []*CustomFieldSetting `json:"custom_field_settings,omitempty"`
+
+	SectionMigrationStatus SectionMigrationStatus `json:"section_migration_status,omitempty"`
 }
 
 // Fetch loads the full details for this Project

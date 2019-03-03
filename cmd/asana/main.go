@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 
 	"bitbucket.org/mikehouston/asana-go"
-	"bitbucket.org/mikehouston/asana-go/util"
 )
 
 var options struct {
@@ -21,7 +20,8 @@ var options struct {
 	Project   []string `long:"project" short:"p" description:"Project to access"`
 	Task      []string `long:"task" short:"t" description:"Task to access"`
 
-	Attach string `long:"attach" description:"Attach a file to a task"`
+	Attach     string `long:"attach" description:"Attach a file to a task"`
+	AddSection string `long:"add-section" description:"Add a new section to a project"`
 
 	Debug   bool   `short:"d" long:"debug" description:"Show debug information"`
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose output"`
@@ -54,6 +54,7 @@ func main() {
 		client.DefaultOptions.Pretty = true
 	}
 	client.Verbose = options.Verbose
+	client.DefaultOptions.Enable = []asana.Feature{asana.StringIDs, asana.NewSections, asana.NewTaskSubtypes}
 
 	// Load a task object
 	if options.Task == nil {
@@ -63,13 +64,13 @@ func main() {
 
 			// Load a workspace object
 			if options.Workspace == nil {
-				check(util.ListWorkspaces(client))
+				check(ListWorkspaces(client))
 				return
 			}
 
 			for _, w := range options.Workspace {
 				workspace := &asana.Workspace{ID: w}
-				check(util.ListProjects(client, workspace))
+				check(ListProjects(client, workspace))
 			}
 			return
 		}
@@ -77,8 +78,17 @@ func main() {
 		for _, p := range options.Project {
 			project := &asana.Project{ID: p}
 
-			check(util.ListSections(client, project))
-			check(util.ListTasks(client, project))
+			if options.AddSection != "" {
+				request := &asana.SectionBase{
+					Name: options.AddSection,
+				}
+
+				_, err := project.CreateSection(client, request)
+				check(err)
+				return
+			}
+
+			fmtProject(client, project)
 		}
 		return
 	}
@@ -89,35 +99,47 @@ func main() {
 
 		fmt.Printf("Task %s: %q\n", task.ID, task.Name)
 		if options.Attach != "" {
-			f, err := os.Open(options.Attach)
-			check(err)
-			defer f.Close()
-
-			a, err := task.CreateAttachment(client, &asana.NewAttachment{
-				Reader:      f,
-				FileName:    f.Name(),
-				ContentType: mime.TypeByExtension(filepath.Ext(f.Name())),
-			})
-			check(err)
-			fmt.Printf("Attachment added: %+v", a)
+			addAttachment(task, client)
 			return
 		}
 
-		fmt.Printf("  Completed: %v\n", task.Completed)
-		if !task.Completed {
-			fmt.Printf("  Due: %s\n", task.DueAt)
-		}
-		if task.Notes != "" {
-			fmt.Printf("  Notes: %q\n", task.Notes)
-		}
-
-		// Get subtasks
-		subtasks, nextPage, err := task.Subtasks(client)
-		check(err)
-		_ = nextPage
-
-		for _, subtask := range subtasks {
-			fmt.Printf("  Subtask %s: %q\n", subtask.ID, subtask.Name)
-		}
+		fmtTask(task, client)
 	}
+}
+
+func fmtProject(client *asana.Client, project *asana.Project) {
+	fmt.Println("\nSections:")
+	check(ListSections(client, project))
+	fmt.Println("\nTasks:")
+	check(ListTasks(client, project))
+}
+
+func fmtTask(task *asana.Task, client *asana.Client) {
+	fmt.Printf("  Completed: %v\n", task.Completed)
+	if !task.Completed {
+		fmt.Printf("  Due: %s\n", task.DueAt)
+	}
+	if task.Notes != "" {
+		fmt.Printf("  Notes: %q\n", task.Notes)
+	}
+	// Get subtasks
+	subtasks, nextPage, err := task.Subtasks(client)
+	check(err)
+	_ = nextPage
+	for _, subtask := range subtasks {
+		fmt.Printf("  Subtask %s: %q\n", subtask.ID, subtask.Name)
+	}
+}
+
+func addAttachment(task *asana.Task, client *asana.Client) {
+	f, err := os.Open(options.Attach)
+	check(err)
+	defer f.Close()
+	a, err := task.CreateAttachment(client, &asana.NewAttachment{
+		Reader:      f,
+		FileName:    f.Name(),
+		ContentType: mime.TypeByExtension(filepath.Ext(f.Name())),
+	})
+	check(err)
+	fmt.Printf("Attachment added: %+v", a)
 }

@@ -28,7 +28,7 @@ type Section struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 
 	// Read-only. The project which contains the section.
-	Project string `json:"project,omitempty"`
+	Project *Project `json:"project,omitempty"`
 }
 
 // Fetch loads the full details for this Section

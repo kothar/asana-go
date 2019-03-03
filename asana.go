@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/google/go-querystring/query"
@@ -25,6 +26,18 @@ const (
 	BaseURL = "https://app.asana.com/api/1.0"
 )
 
+type Feature string
+
+func (f Feature) String() string {
+	return string(f)
+}
+
+const (
+	NewTaskSubtypes Feature = "new_task_subtypes"
+	NewSections     Feature = "new_sections"
+	StringIDs       Feature = "string_ids"
+)
+
 // Client is the root client for the Asana API. The nested HTTPClient should provide
 // Authorization header injection.
 type Client struct {
@@ -33,7 +46,6 @@ type Client struct {
 
 	Debug          bool
 	Verbose        []bool
-	FastAPI        bool
 	DefaultOptions Options
 }
 
@@ -43,7 +55,6 @@ func NewClient(httpClient *http.Client) *Client {
 	u, _ := url.Parse(BaseURL)
 	return &Client{
 		BaseURL:    u,
-		FastAPI:    true,
 		HTTPClient: httpClient,
 	}
 }
@@ -94,6 +105,12 @@ func mergeQuery(q url.Values, request interface{}) error {
 func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*NextPage, error) {
 	requestID := xid.New()
 
+	// Prepare options
+	options, err := c.mergeOptions(opts...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "%s unable to merge options", requestID)
+	}
+
 	// Encode default options
 	if c.Debug {
 		log.Printf("%s Default options: %+v", requestID, c.DefaultOptions)
@@ -142,9 +159,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s Request error", requestID)
 	}
-	if c.FastAPI {
-		request.Header.Add("Asana-Fast-Api", "true")
-	}
+	c.addHeaders(request, options)
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%s GET error", requestID)
@@ -157,6 +172,34 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 
 	return resultData.NextPage, nil
+}
+
+func (c *Client) addHeaders(request *http.Request, options *Options) {
+	if options.FastAPI {
+		request.Header.Add("Asana-Fast-Api", "true")
+	}
+
+	if len(options.Enable) > 0 {
+		request.Header.Add("Asana-Enable", joinFeatures(options.Enable))
+	}
+	if len(options.Disable) > 0 {
+		request.Header.Add("Asana-Disable", joinFeatures(options.Disable))
+	}
+
+	if c.Debug {
+		request.Header.Write(os.Stderr)
+	}
+}
+
+func joinFeatures(features []Feature) string {
+	b := strings.Builder{}
+	for _, feature := range features {
+		if b.Len() > 0 {
+			b.WriteString(",")
+		}
+		b.WriteString(string(feature))
+	}
+	return b.String()
 }
 
 func (c *Client) post(path string, data, result interface{}, opts ...*Options) error {
@@ -172,16 +215,12 @@ func (c *Client) delete(path string, opts ...*Options) error {
 }
 
 func (c *Client) do(method, path string, data, result interface{}, opts ...*Options) error {
-	// Prepare options
+
 	requestID := xid.New()
-	var options *Options
-	if opts != nil {
-		options = opts[0]
-	}
-	if options == nil {
-		options = &Options{}
-	}
-	if err := mergo.Merge(options, c.DefaultOptions); err != nil {
+
+	// Prepare options
+	options, err := c.mergeOptions(opts...)
+	if err != nil {
 		return errors.Wrapf(err, "%s unable to merge options", requestID)
 	}
 
@@ -215,9 +254,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 	}
 
 	request.Header.Add("Content-Type", "application/json")
-	if c.FastAPI {
-		request.Header.Add("Asana-Fast-Api", "true")
-	}
+	c.addHeaders(request, options)
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return errors.Wrapf(err, "%s error", method)
@@ -225,6 +262,18 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 
 	_, err = c.parseResponse(resp, result, requestID)
 	return err
+}
+
+func (c *Client) mergeOptions(opts ...*Options) (*Options, error) {
+	var options *Options
+	if opts != nil {
+		options = opts[0]
+	}
+	if options == nil {
+		options = &Options{}
+	}
+	err := mergo.Merge(options, c.DefaultOptions)
+	return options, err
 }
 
 // From mime.multipart package ------
@@ -236,9 +285,14 @@ func escapeQuotes(s string) string {
 
 // --------
 
-func (c *Client) postMultipart(path string, result interface{}, field string, r io.ReadCloser, filename string, contentType string) error {
+func (c *Client) postMultipart(path string, result interface{}, field string, r io.ReadCloser, filename string, contentType string, opts ...*Options) error {
 	// Make request
 	requestID := xid.New()
+	options, err := c.mergeOptions(opts...)
+	if err != nil {
+		return errors.Wrapf(err, "%s unable to merge options", requestID)
+	}
+
 	if c.Debug {
 		log.Printf("%s POST multipart %s\n%s=%s;ContentType=%s", requestID, path, field, filename, contentType)
 	}
@@ -253,7 +307,7 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 			escapeQuotes(field), escapeQuotes(filename)))
 	h.Set("Content-Type", contentType)
 
-	_, err := partWriter.CreatePart(h)
+	_, err = partWriter.CreatePart(h)
 	if err != nil {
 		return errors.Wrapf(err, "%s create multipart header", requestID)
 	}
@@ -274,9 +328,7 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 	}
 
 	request.Header.Add("Content-Type", partWriter.FormDataContentType())
-	if c.FastAPI {
-		request.Header.Add("Asana-Fast-Api", "true")
-	}
+	c.addHeaders(request, options)
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
 		return errors.Wrapf(err, "%s POST error", requestID)
@@ -294,8 +346,10 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 	if err != nil {
 		return nil, err
 	}
+
 	if c.Debug {
-		log.Printf("%s %s\n%s", requestID, resp.Status, body)
+		resp.Header.Write(os.Stderr)
+		fmt.Fprintf(os.Stderr, "%s %s\n%s\n", requestID, resp.Status, body)
 	}
 
 	// Decode the response
