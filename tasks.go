@@ -89,6 +89,11 @@ type TaskBase struct {
 	// fits on a line in the UI for maximum readability. However, it can be longer.
 	Name string `json:"name,omitempty"`
 
+	// The type of task. Different subtypes of tasks retain many of
+	// the same fields and behavior, but may render differently in Asana or
+	// represent tasks with different semantic meaning.
+	ResourceSubtype string `json:"resource_subtype,omitempty"`
+
 	// More detailed, free-form textual information associated with the
 	// task.
 	Notes string `json:"notes,omitempty"`
@@ -185,11 +190,6 @@ type CreateMembership struct {
 type Task struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
-
-	// Read-only. The type of task. Different subtypes of tasks retain many of
-	// the same fields and behavior, but may render differently in Asana or
-	// represent tasks with different semantic meaning.
-	ResourceSubtype string `json:"resource_subtype,omitempty"`
 
 	TaskBase
 
