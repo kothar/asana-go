@@ -211,14 +211,17 @@ type Task struct {
 	// This attribute can only be specified at creation time.
 	Workspace *Workspace `json:"workspace,omitempty"`
 
-	// True if the object is hearted by the authorized user, false if not.
-	Hearted bool `json:"hearted,omitempty"`
+	// True if the task is liked by the authorized user, false if not.
+	Liked bool `json:"liked,omitempty"`
 
-	// Read-only. Array of users who have hearted this object.
-	Hearts []*User `json:"hearts,omitempty"`
+	// Read-only. Array of users who have liked this task.
+	Likes []*User `json:"likes,omitempty"`
 
-	// Read-only. The number of users who have hearted this object.
-	NumHearts int32 `json:"num_hearts,omitempty"`
+	// Read-only. The number of users who have liked this task.
+	NumLikes int32 `json:"num_likes,omitempty"`
+
+	// Read-only. Opt In. The number of subtasks on this task.
+	NumSubtasks int32 `json:"num_subtasks,omitempty"`
 
 	// Read-only. Array of users following this task. Followers are a
 	// subset of members who receive all notifications for a project, the
