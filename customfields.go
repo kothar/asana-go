@@ -133,7 +133,7 @@ type CreateCustomFieldRequest struct {
 
 	// The number of decimal places for the numerical values.
 	// Required if the custom field is of type ‘number’.
-	Precision int `json:"precision,omitempty"`
+	Precision int `json:"precision"`
 
 	// The discrete values the custom field can assume.
 	// Required if the custom field is of type ‘enum’.
