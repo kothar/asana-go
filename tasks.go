@@ -172,6 +172,13 @@ type CreateMembership struct {
 	Section string `json:"section"`
 }
 
+type UpdateTaskRequest struct {
+	TaskBase
+
+	Assignee  string   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
+	Followers []string `json:"followers,omitempty"` // Array of users following this task.
+}
+
 // Task is the basic object around which many operations in Asana are
 // centered. In the Asana application, multiple tasks populate the middle pane
 // according to some view parameters, and the set of selected tasks determines
@@ -287,7 +294,7 @@ func (t *Task) Fetch(client *Client) error {
 }
 
 // Update applies new values to a Task record
-func (t *Task) Update(client *Client, update *TaskBase) error {
+func (t *Task) Update(client *Client, update *UpdateTaskRequest) error {
 	client.trace("Updating task %q", t.Name)
 
 	err := client.put(fmt.Sprintf("/tasks/%s", t.ID), update, t)
