@@ -2,10 +2,12 @@ package asana
 
 import (
 	"fmt"
-	"github.com/rs/xid"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/rs/xid"
 )
 
 func (r *Response) Error(resp *http.Response, requestID xid.ID) error {
@@ -54,8 +56,12 @@ func (err *Error) withType(statusCode int, errorType string) *Error {
 }
 
 func IsRecoverableError(err error) bool {
-	if e, ok := err.(*Error); ok {
-		return e.StatusCode == 500
+	for err != nil {
+		if e, ok := err.(*Error); ok {
+			return e.StatusCode == 500
+		} else {
+			err = errors.Cause(err)
+		}
 	}
 	return false
 }
