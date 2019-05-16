@@ -75,6 +75,14 @@ type CreateProjectRequest struct {
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
+// UpdateProjectRequest represents a request to update a project
+type UpdateProjectRequest struct {
+	ProjectBase
+
+	Owner        string                 `json:"owner,omitempty"`
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+}
+
 type SectionMigrationStatus string
 
 const (
@@ -155,6 +163,19 @@ func (p *Project) Fetch(client *Client, opts ...*Options) error {
 	client.trace("Loading project details for %q", p.Name)
 
 	_, err := client.get(fmt.Sprintf("/projects/%s", p.ID), nil, p, opts...)
+	return err
+}
+
+// Update
+//
+// When using this method, it is best to specify only those fields you wish to change,
+// or else you may overwrite changes made by another user since you last retrieved the task.
+//
+// Updates the referenced project object
+func (p *Project) Update(client *Client, request *UpdateProjectRequest, opts ...*Options) error {
+	client.trace("Update project %q", p.Name)
+
+	err := client.put(fmt.Sprintf("/projects/%s", p.ID), request, p, opts...)
 	return err
 }
 
