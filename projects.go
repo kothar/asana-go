@@ -215,6 +215,42 @@ func (w *Workspace) AllProjects(client *Client, options ...*Options) ([]*Project
 	return allProjects, nil
 }
 
+// Projects returns a list of projects in this team
+func (t *Team) Projects(client *Client, options ...*Options) ([]*Project, *NextPage, error) {
+	client.trace("Listing projects in %q", t.Name)
+
+	var result []*Project
+
+	// Make the request
+	nextPage, err := client.get(fmt.Sprintf("/teams/%s/projects", t.ID), nil, &result, options...)
+	return result, nextPage, err
+}
+
+// AllProjects repeatedly pages through all available projects in a team
+func (t *Team) AllProjects(client *Client, options ...*Options) ([]*Project, error) {
+	var allProjects []*Project
+	nextPage := &NextPage{}
+
+	var projects []*Project
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		projects, nextPage, err = t.Projects(client, allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allProjects = append(allProjects, projects...)
+	}
+	return allProjects, nil
+}
+
 // CreateProject adds a new project to a workspace
 func (c *Client) CreateProject(project *CreateProjectRequest) (*Project, error) {
 	c.info("Creating project %q\n", project.Name)
