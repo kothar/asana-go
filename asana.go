@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/rs/xid"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,6 +14,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/rs/xid"
 
 	"github.com/google/go-querystring/query"
 	"github.com/imdario/mergo"
@@ -355,7 +356,12 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 	// Decode the response
 	value := &Response{}
 	if err := json.Unmarshal(body, value); err != nil {
-		return nil, err
+		value.Errors = []*Error{{
+			StatusCode: resp.StatusCode,
+			Type:       "unknown",
+			Message:    http.StatusText(resp.StatusCode),
+			RequestID:  requestID.String(),
+		}}
 	}
 
 	// Check for errors
@@ -371,12 +377,12 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 		return nil, errors.Errorf("%s Missing data from response", requestID)
 	}
 
-	return value, c.parseResponseData(value.Data, result)
+	return value, c.parseResponseData(value.Data, result, requestID)
 }
 
-func (c *Client) parseResponseData(data []byte, result interface{}) error {
+func (c *Client) parseResponseData(data []byte, result interface{}, requestID xid.ID) error {
 	if err := json.Unmarshal(data, result); err != nil {
-		return err
+		return errors.Wrapf(err, "%s Unable to parse response data", requestID)
 	}
 
 	return nil

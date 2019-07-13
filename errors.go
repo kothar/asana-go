@@ -49,6 +49,17 @@ func (err Error) Error() string {
 	return fmt.Sprintf("%s %s: %s", err.RequestID, err.Type, err.Message)
 }
 
+func Unwrap(err error) (*Error, bool) {
+	for err != nil {
+		if e, ok := err.(*Error); ok {
+			return e, true
+		} else {
+			err = errors.Cause(err)
+		}
+	}
+	return nil, false
+}
+
 func (err *Error) withType(statusCode int, errorType string) *Error {
 	err.StatusCode = statusCode
 	err.Type = errorType
@@ -56,19 +67,15 @@ func (err *Error) withType(statusCode int, errorType string) *Error {
 }
 
 func IsRecoverableError(err error) bool {
-	for err != nil {
-		if e, ok := err.(*Error); ok {
-			return e.StatusCode == 500
-		} else {
-			err = errors.Cause(err)
-		}
+	if e, ok := Unwrap(err); ok {
+		return e.StatusCode == 500
 	}
 	return false
 }
 
 // IsNotFoundError checks if the provided error represents a 404 not found response from the API
 func IsNotFoundError(err error) bool {
-	if e, ok := err.(*Error); ok {
+	if e, ok := Unwrap(err); ok {
 		return e.StatusCode == 404
 	}
 	return false
@@ -76,7 +83,7 @@ func IsNotFoundError(err error) bool {
 
 // IsAuthError checks if the provided error represents a 401 Authorization error response from the API
 func IsAuthError(err error) bool {
-	if e, ok := err.(*Error); ok {
+	if e, ok := Unwrap(err); ok {
 		return e.StatusCode == 401
 	}
 	return false
@@ -84,10 +91,16 @@ func IsAuthError(err error) bool {
 
 // IsRateLimited returns true if the error was a rate limit error
 func IsRateLimited(err error) bool {
-	if e, ok := err.(*Error); ok {
-		if e.StatusCode == 429 {
-			return true
-		}
+	if e, ok := Unwrap(err); ok {
+		return e.StatusCode == 429
+	}
+	return false
+}
+
+// IsRateLimited returns true if the error was a rate limit error
+func IsPayloadTooLarge(err error) bool {
+	if e, ok := Unwrap(err); ok {
+		return e.StatusCode == 413
 	}
 	return false
 }
@@ -95,7 +108,7 @@ func IsRateLimited(err error) bool {
 // RetryAfter returns a Duration indicating after how many seconds a rate-limited requests may be retried
 // or nil if the error was not a rate limit error
 func RetryAfter(err error) *time.Duration {
-	if e, ok := err.(*Error); ok {
+	if e, ok := Unwrap(err); ok {
 		if e.StatusCode == 429 {
 			return &e.RetryAfter
 		}
