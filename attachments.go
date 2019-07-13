@@ -39,6 +39,9 @@ type Attachment struct {
 	// friendlier to users in a browser than just directing them to a raw
 	// file.
 	ViewURL string `json:"view_url,omitempty"`
+
+	// Undocumented. A permanent asana.com link which should be a permalink
+	PermanentURL string `json:"permanent_url,omitempty"`
 }
 
 // Attachments lists all attachments attached to a task
