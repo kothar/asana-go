@@ -190,6 +190,30 @@ func (w *Workspace) Projects(client *Client, options ...*Options) ([]*Project, *
 	return result, nextPage, err
 }
 
+type favoritesRequestParams struct {
+	ResourceType string `url:"resource_type"`
+	Workspace    string `url:"workspace"`
+}
+
+// FavoriteProjects returns a list of the current user's favorite projects in this workspace
+func (w *Workspace) FavoriteProjects(client *Client, options ...*Options) ([]*Project, *NextPage, error) {
+	client.trace("Listing favorite projects in %q", w.Name)
+
+	var result []*Project
+
+	// Make the request
+	query := favoritesRequestParams{
+		ResourceType: "project",
+		Workspace:    w.ID,
+	}
+	user, err := client.CurrentUser()
+	if err != nil {
+		return nil, nil, err
+	}
+	nextPage, err := client.get(fmt.Sprintf("/users/%s/favorites", user.ID), query, &result, options...)
+	return result, nextPage, err
+}
+
 // AllProjects repeatedly pages through all available projects in a workspace
 func (w *Workspace) AllProjects(client *Client, options ...*Options) ([]*Project, error) {
 	var allProjects []*Project
@@ -206,6 +230,31 @@ func (w *Workspace) AllProjects(client *Client, options ...*Options) ([]*Project
 
 		allOptions := append([]*Options{page}, options...)
 		projects, nextPage, err = w.Projects(client, allOptions...)
+		if err != nil {
+			return nil, err
+		}
+
+		allProjects = append(allProjects, projects...)
+	}
+	return allProjects, nil
+}
+
+// AllProjects repeatedly pages through all available projects in a workspace
+func (w *Workspace) AllFavoriteProjects(client *Client, options ...*Options) ([]*Project, error) {
+	var allProjects []*Project
+	nextPage := &NextPage{}
+
+	var projects []*Project
+	var err error
+
+	for nextPage != nil {
+		page := &Options{
+			Limit:  100,
+			Offset: nextPage.Offset,
+		}
+
+		allOptions := append([]*Options{page}, options...)
+		projects, nextPage, err = w.FavoriteProjects(client, allOptions...)
 		if err != nil {
 			return nil, err
 		}

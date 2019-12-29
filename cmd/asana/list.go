@@ -26,13 +26,12 @@ func ListWorkspaces(c *asana.Client) error {
 
 func ListProjects(client *asana.Client, w *asana.Workspace) error {
 	// List projects
-	projects, nextPage, err := w.Projects(client, &asana.Options{
+	projects, err := w.AllProjects(client, &asana.Options{
 		Fields: []string{"name", "section_migration_status", "layout"},
 	})
 	if err != nil {
 		return err
 	}
-	_ = nextPage
 
 	for _, project := range projects {
 		fmt.Printf("  Project %s %q\n", project.ID, project.Name)
