@@ -54,7 +54,8 @@ func (w *Workspace) Users(client *Client, options ...*Options) ([]*User, *NextPa
 	var result []*User
 
 	// Make the request
-	nextPage, err := client.get(fmt.Sprintf("/users?workspace=%s", w.ID), nil, &result, options...)
+	queryOptions := append([]*Options{&Options{Workspace: w.ID}}, options...)
+	nextPage, err := client.get("/users", nil, &result, queryOptions...)
 	return result, nextPage, err
 }
 

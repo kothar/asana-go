@@ -108,4 +108,7 @@ type Options struct {
 	FastAPI bool      `json:"-" url:"-"`
 	Enable  []Feature `json:"-" url:"-"`
 	Disable []Feature `json:"-" url:"-"`
+
+	// Filters
+	Workspace string `json:"workspace,omitempty" url:"workspace,omitempty"`
 }
