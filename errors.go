@@ -65,7 +65,7 @@ func (err *Error) withType(statusCode int, errorType string) *Error {
 
 func IsRecoverableError(err error) bool {
 	if e, ok := IsAsanaError(err); ok {
-		return e.StatusCode == 500
+		return e.StatusCode >= 500 && e.StatusCode < 600
 	}
 	return false
 }
@@ -104,11 +104,11 @@ func IsPayloadTooLarge(err error) bool {
 
 // RetryAfter returns a Duration indicating after how many seconds a rate-limited requests may be retried
 // or nil if the error was not a rate limit error
-func RetryAfter(err error) *time.Duration {
+func RetryAfter(err error) time.Duration {
 	if e, ok := IsAsanaError(err); ok {
 		if e.StatusCode == 429 {
-			return &e.RetryAfter
+			return e.RetryAfter
 		}
 	}
-	return nil
+	return time.Minute
 }
