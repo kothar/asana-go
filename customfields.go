@@ -199,7 +199,7 @@ func (w *Workspace) AllCustomFields(client *Client, options ...*Options) ([]*Cus
 
 	for nextPage != nil {
 		page := &Options{
-			Limit:  100,
+			Limit:  50,
 			Offset: nextPage.Offset,
 		}
 

@@ -69,7 +69,7 @@ func (w *Workspace) AllUsers(client *Client, options ...*Options) ([]*User, erro
 
 	for nextPage != nil {
 		page := &Options{
-			Limit:  100,
+			Limit:  50,
 			Offset: nextPage.Offset,
 		}
 

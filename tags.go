@@ -78,7 +78,7 @@ func (w *Workspace) AllTags(client *Client, options ...*Options) ([]*Tag, error)
 
 	for nextPage != nil {
 		page := &Options{
-			Limit:  100,
+			Limit:  50,
 			Offset: nextPage.Offset,
 		}
 
