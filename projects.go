@@ -51,6 +51,8 @@ type ProjectBase struct {
 	// The notes of the text with formatting as HTML.
 	HTMLNotes string `json:"html_notes,omitempty"`
 
+	Icon string `json:"icon,omitempty"`
+
 	// Opt In. Determines if the project is a template.
 	IsTemplate bool `json:"is_template,omitempty"`
 
@@ -116,13 +118,16 @@ type Project struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
-	// The current owner of the project, may be null.
-	Owner *User `json:"owner,omitempty"`
-
 	ProjectBase
 
 	// Read-only. The time at which this object was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
+
+	// Read-only. Array of Custom Field Settings (in compact form).
+	CustomFieldSettings []*CustomFieldSetting `json:"custom_field_settings,omitempty"`
+
+	// Read-only. Array of users who are members of this project.
+	Members []*User `json:"members,omitempty"`
 
 	// Read-only. The time at which this object was last modified.
 	//
@@ -136,19 +141,6 @@ type Project struct {
 	// This attribute can only be specified at creation time.
 	Workspace *Workspace `json:"workspace,omitempty"`
 
-	// Read-only. Array of users following this project. Followers are a
-	// subset of members who receive all notifications for a project, the
-	// default notification setting when adding members to a project in-
-	// product.
-	Followers []*User `json:"followers,omitempty"`
-
-	// Read-only. Array of users who are members of this project.
-	Members []*User `json:"members,omitempty"`
-
-	// Create-only. The team that this project is shared with. This field only
-	// exists for projects in organizations.
-	Team *Team `json:"team,omitempty"`
-
 	// Array of custom field values set on the project for a custom field applied
 	// to a parent portfolio. Take care to avoid confusing these custom field values
 	// with the custom field settings in the custom_field_settings property.
@@ -158,10 +150,18 @@ type Project struct {
 	// the /custom_fields/{custom_field_gid} endpoint.
 	CustomFields []*CustomFieldValue `json:"custom_fields,omitempty"`
 
-	// Read-only. Array of Custom Field Settings (in compact form).
-	CustomFieldSettings []*CustomFieldSetting `json:"custom_field_settings,omitempty"`
+	// Read-only. Array of users following this project. Followers are a
+	// subset of members who receive all notifications for a project, the
+	// default notification setting when adding members to a project in-
+	// product.
+	Followers []*User `json:"followers,omitempty"`
 
-	SectionMigrationStatus SectionMigrationStatus `json:"section_migration_status,omitempty"`
+	// The current owner of the project, may be null.
+	Owner *User `json:"owner,omitempty"`
+
+	// Create-only. The team that this project is shared with. This field only
+	// exists for projects in organizations.
+	Team *Team `json:"team,omitempty"`
 }
 
 // Fetch loads the full details for this Project
