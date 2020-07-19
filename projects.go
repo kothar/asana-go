@@ -15,38 +15,21 @@ type ProjectStatus struct {
 }
 
 // Layout indicates the Project layout to use
-type Layout string
+type View string
 
 const (
-	Board Layout = "board"
-	List  Layout = "list"
+	List     View = "list"
+	Board    View = "board"
+	Calendar View = "calendar"
+	Timeline View = "timeline"
 )
 
 // ProjectBase contains the parts of Project which are not related to a specific instance
 type ProjectBase struct {
-	// Read-only. The name of the object.
-	Name string `json:"name,omitempty"`
-
-	// A description of the project’s status containing a color (must be
-	// either null or one of: green, yellow, red) and a short description.
-	CurrentStatus *ProjectStatus `json:"current_status,omitempty"`
-
-	// The day on which this project is due. This takes a date with format
-	// YYYY-MM-DD.
-	DueDate *Date `json:"due_date,omitempty"`
-
-	// The day on which this project starts. This takes a date with format
-	// YYYY-MM-DD.
-	StartOn *Date `json:"start_on,omitempty"`
 
 	// True if the project is archived, false if not. Archived projects do not
 	// show in the UI by default and may be treated differently for queries.
 	Archived bool `json:"archived,omitempty"`
-
-	// True if the project is public to the organization. If false, do not
-	// share this project with other users in this organization without
-	// explicitly checking to see if they have access.
-	Public bool `json:"public,omitempty"`
 
 	// Color of the object. Must be either null or one of: dark-pink, dark-
 	// green, dark-blue, dark-red, dark-teal, dark-brown, dark-orange, dark-
@@ -54,15 +37,38 @@ type ProjectBase struct {
 	// light-teal, light-yellow, light-orange, light-purple, light-warm-gray.
 	Color string `json:"color,omitempty"`
 
-	// More detailed, free-form textual information associated with the
-	// object.
-	Notes string `json:"notes,omitempty"`
+	// A description of the project’s status containing a color (must be
+	// either null or one of: green, yellow, red) and a short description.
+	CurrentStatus *ProjectStatus `json:"current_status,omitempty"`
+
+	// The layout (board or list view) of the project.
+	DefaultView View `json:"default_view,omitempty"`
+
+	// The day on which this project is due. This takes a date with format
+	// YYYY-MM-DD.
+	DueOn *Date `json:"due_on,omitempty"`
 
 	// The notes of the text with formatting as HTML.
 	HTMLNotes string `json:"html_notes,omitempty"`
 
-	// The layout (board or list view) of the project.
-	Layout Layout `json:"layout,omitempty"`
+	// Opt In. Determines if the project is a template.
+	IsTemplate bool `json:"is_template,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
+
+	// More detailed, free-form textual information associated with the
+	// object.
+	Notes string `json:"notes,omitempty"`
+
+	// True if the project is public to the organization. If false, do not
+	// share this project with other users in this organization without
+	// explicitly checking to see if they have access.
+	Public bool `json:"public,omitempty"`
+
+	// The day on which this project starts. This takes a date with format
+	// YYYY-MM-DD.
+	StartOn *Date `json:"start_on,omitempty"`
 }
 
 // CreateProjectRequest represents a request to create a new project
