@@ -79,7 +79,7 @@ type Membership struct {
 // can view the resource to which the data is attached, so this should not be
 // used for private user data.
 type ExternalData struct {
-	ID   string `json:"id,omitempty"`
+	ID   string `json:"gid,omitempty"`
 	Data string `json:"data,omitempty"`
 }
 
@@ -106,7 +106,7 @@ type TaskBase struct {
 	AssigneeStatus string `json:"assignee_status,omitempty"`
 
 	// True if the task is currently marked complete, false if not.
-	Completed bool `json:"completed,omitempty"`
+	Completed *bool `json:"completed,omitempty"`
 
 	// Date on which this task is due, or null if the task has no due date.
 	// This takes a date with YYYY-MM-DD format and should not be used
