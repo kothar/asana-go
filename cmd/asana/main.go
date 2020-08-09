@@ -116,7 +116,7 @@ func fmtProject(client *asana.Client, project *asana.Project) {
 
 func fmtTask(task *asana.Task, client *asana.Client) {
 	fmt.Printf("  Completed: %v\n", task.Completed)
-	if !task.Completed {
+	if task.Completed != nil && !*task.Completed {
 		fmt.Printf("  Due: %s\n", task.DueAt)
 	}
 	if task.Notes != "" {

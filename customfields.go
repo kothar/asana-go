@@ -3,7 +3,6 @@ package asana
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 )
 
 type EnumValue struct {
@@ -31,35 +30,84 @@ const (
 	Number FieldType = "number"
 )
 
-// Custom Fields store the metadata that is used in order to add user-
-// specified information to tasks in Asana. Be sure to reference the Custom
-// Fields developer documentation for more information about how custom fields
-// relate to various resources in Asana.
-type CustomField struct {
-	// Read-only. Globally unique ID of the object
-	ID string `json:"gid,omitempty"`
+type LabelPosition string
 
-	// Read-only. The name of the object.
-	Name string `json:"name,omitempty"`
+const (
+	Prefix LabelPosition = "prefix"
+	Suffix LabelPosition = "suffix"
+)
+
+type Format string
+
+const (
+	Currency   = "currency"
+	Identifier = "identifier"
+	Percentage = "percentage"
+	Custom     = "custom"
+	None       = "none"
+)
+
+type CustomFieldBase struct {
+	// ISO 4217 currency code to format this custom field. This will be null
+	// if the format is not currency.
+	CurrencyCode string `json:"currency_code,omitempty"`
+
+	// This is the string that appears next to the custom field value.
+	// This will be null if the format is not custom.
+	CustomLabel string `json:"custom_label,omitempty"`
+
+	// Only relevant for custom fields with custom format. This depicts where to place the custom label.
+	// This will be null if the format is not custom.
+	CustomLabelPosition LabelPosition `json:"custom_label_position,omitempty"`
 
 	// The description of the custom field.
 	Description string `json:"description,omitempty"`
 
-	// Read-only. The time at which this object was created.
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	// Opt In. The description of the custom field.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// The format of this custom field.
+	Format Format `json:"format,omitempty"`
+
+	// Conditional. This flag describes whether a follower of a task with this
+	// field should receive inbox notifications from changes to this field.
+	HasNotificationsEnabled *bool `json:"has_notifications_enabled,omitempty"`
+
+	// This flag describes whether this custom field is available to every container
+	// in the workspace. Before project-specific custom fields, this field was always true.
+	IsGlobalToWorkspace *bool `json:"is_global_to_workspace,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
+
+	// Only relevant for custom fields of type ‘Number’. This field dictates the number of places after
+	// the decimal to round to, i.e. 0 is integer values, 1 rounds to the nearest tenth, and so on.
+	// Must be between 0 and 6, inclusive.
+	// For percentage format, this may be unintuitive, as a value of 0.25 has a precision of 0, while a
+	// value of 0.251 has a precision of 1. This is due to 0.25 being displayed as 25%.
+	// The identifier format will always have a precision of 0.
+	Precision int `json:"precision,omitempty"`
 
 	// The type of the custom field. Must be one of the given values:
 	// 'text', 'enum', 'number'
 	ResourceSubtype FieldType `json:"resource_subtype"`
+}
+
+// Custom Fields store the metadata that is used in order to add user-
+// specified information to tasks in Asana. Be sure to reference the Custom
+// Fields developer documentation for more information about how custom fields
+// relate to various resources in Asana.
+// Users in Asana can lock custom fields, which will make them read-only when accessed by other users.
+// Attempting to edit a locked custom field will return HTTP error code 403 Forbidden.
+type CustomField struct {
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
+	CustomFieldBase
 
 	// Only relevant for custom fields of type ‘Enum’. This array specifies
 	// the possible values which an enum custom field can adopt.
 	EnumOptions []*EnumValue `json:"enum_options,omitempty"`
-
-	// Only relevant for custom fields of type ‘Number’. This field dictates
-	// the number of places after the decimal to round to, i.e. 0 is integer
-	// values, 1 rounds to the nearest tenth, and so on.
-	Precision int `json:"precision,omitempty"`
 }
 
 type CustomFieldSetting struct {
@@ -118,22 +166,10 @@ func (p *Project) RemoveCustomFieldSetting(client *Client, customFieldID string)
 }
 
 type CreateCustomFieldRequest struct {
+	CustomFieldBase
+
 	// Required: The workspace to create a custom field in.
 	Workspace string `json:"workspace"`
-
-	// Required: The type of the custom field. Must be one of the given values:
-	// 'text', 'enum', 'number'
-	ResourceSubtype FieldType `json:"resource_subtype"`
-
-	// Required. The name of the object.
-	Name string `json:"name"`
-
-	// The description of the custom field.
-	Description string `json:"description,omitempty"`
-
-	// The number of decimal places for the numerical values.
-	// Required if the custom field is of type ‘number’.
-	Precision int `json:"precision"`
 
 	// The discrete values the custom field can assume.
 	// Required if the custom field is of type ‘enum’.
