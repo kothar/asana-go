@@ -86,7 +86,7 @@ type CustomFieldBase struct {
 	// For percentage format, this may be unintuitive, as a value of 0.25 has a precision of 0, while a
 	// value of 0.251 has a precision of 1. This is due to 0.25 being displayed as 25%.
 	// The identifier format will always have a precision of 0.
-	Precision int `json:"precision,omitempty"`
+	Precision *int `json:"precision,omitempty"`
 
 	// The type of the custom field. Must be one of the given values:
 	// 'text', 'enum', 'number'
