@@ -46,7 +46,7 @@ type Error struct {
 }
 
 func (err Error) Error() string {
-	return fmt.Sprintf("%s %s: %s", err.RequestID, err.Type, err.Message)
+	return fmt.Sprintf("%s %d: %s", err.RequestID, err.StatusCode, err.Message)
 }
 
 func IsAsanaError(err error) (*Error, bool) {

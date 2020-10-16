@@ -315,3 +315,13 @@ func (c *Client) CreateProject(project *CreateProjectRequest) (*Project, error) 
 	err := c.post("/projects", project, result)
 	return result, err
 }
+
+// CreateProject adds a new project to a team
+func (t *Team) CreateProject(c *Client, project *CreateProjectRequest) (*Project, error) {
+	c.info("Creating project %q\n", project.Name)
+
+	result := &Project{}
+
+	err := c.post(fmt.Sprintf("/teams/%s/projects", t.ID), project, result)
+	return result, err
+}
