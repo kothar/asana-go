@@ -100,6 +100,7 @@ type CustomFieldBase struct {
 // Users in Asana can lock custom fields, which will make them read-only when accessed by other users.
 // Attempting to edit a locked custom field will return HTTP error code 403 Forbidden.
 type CustomField struct {
+	client *Client
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -128,8 +129,8 @@ type AddCustomFieldSettingRequest struct {
 	InsertAfter  string `json:"insert_after,omitempty"`
 }
 
-func (p *Project) AddCustomFieldSetting(client *Client, request *AddCustomFieldSettingRequest) (*CustomFieldSetting, error) {
-	client.trace("Attach custom field %q to project %q", request.CustomField, p.ID)
+func (p *Project) AddCustomFieldSetting(request *AddCustomFieldSettingRequest) (*CustomFieldSetting, error) {
+	p.client.trace("Attach custom field %q to project %q", request.CustomField, p.ID)
 
 	// Custom request encoding
 	m := map[string]interface{}{}
@@ -149,19 +150,20 @@ func (p *Project) AddCustomFieldSetting(client *Client, request *AddCustomFieldS
 	}
 
 	result := &CustomFieldSetting{}
-	err := client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), m, result)
+	err := p.client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), m, result)
+	result.CustomField.client = p.client
 	return result, err
 }
 
-func (p *Project) RemoveCustomFieldSetting(client *Client, customFieldID string) error {
-	client.trace("Remove custom field %q from project %q", customFieldID, p.ID)
+func (p *Project) RemoveCustomFieldSetting(customFieldID string) error {
+	p.client.trace("Remove custom field %q from project %q", customFieldID, p.ID)
 
 	// Custom request encoding
 	m := map[string]interface{}{
 		"custom_field": customFieldID,
 	}
 
-	err := client.post(fmt.Sprintf("/projects/%s/removeCustomFieldSetting", p.ID), m, &json.RawMessage{})
+	err := p.client.post(fmt.Sprintf("/projects/%s/removeCustomFieldSetting", p.ID), m, &json.RawMessage{})
 	return err
 }
 
@@ -181,6 +183,7 @@ func (c *Client) CreateCustomField(request *CreateCustomFieldRequest) (*CustomFi
 
 	result := &CustomField{}
 	err := c.post("/custom_fields", request, result)
+	result.client = c
 	return result, err
 }
 
@@ -208,25 +211,28 @@ type CustomFieldValue struct {
 }
 
 // Fetch loads the full details for this CustomField
-func (f *CustomField) Fetch(client *Client, options ...*Options) error {
-	client.trace("Loading details for custom field %q", f.ID)
+func (f *CustomField) Fetch(options ...*Options) error {
+	f.client.trace("Loading details for custom field %q", f.ID)
 
-	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f, options...)
+	_, err := f.client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f, options...)
 	return err
 }
 
 // CustomFields returns the compact records for all custom fields in the workspace
-func (w *Workspace) CustomFields(client *Client, options ...*Options) ([]*CustomField, *NextPage, error) {
-	client.trace("Listing custom fields in workspace %s...\n", w.ID)
+func (w *Workspace) CustomFields(options ...*Options) ([]*CustomField, *NextPage, error) {
+	w.client.trace("Listing custom fields in workspace %s...\n", w.ID)
 	var result []*CustomField
 
 	// Make the request
-	nextPage, err := client.get(fmt.Sprintf("/workspaces/%s/custom_fields", w.ID), nil, &result, options...)
+	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%s/custom_fields", w.ID), nil, &result, options...)
+	for _, r := range result {
+		r.client = w.client
+	}
 	return result, nextPage, err
 }
 
 // AllCustomFields repeatedly pages through all available custom fields in a workspace
-func (w *Workspace) AllCustomFields(client *Client, options ...*Options) ([]*CustomField, error) {
+func (w *Workspace) AllCustomFields(options ...*Options) ([]*CustomField, error) {
 	var allCustomFields []*CustomField
 	nextPage := &NextPage{}
 
@@ -240,12 +246,15 @@ func (w *Workspace) AllCustomFields(client *Client, options ...*Options) ([]*Cus
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		customFields, nextPage, err = w.CustomFields(client, allOptions...)
+		customFields, nextPage, err = w.CustomFields(allOptions...)
 		if err != nil {
 			return nil, err
 		}
 
 		allCustomFields = append(allCustomFields, customFields...)
+	}
+	for _, r := range allCustomFields {
+		r.client = w.client
 	}
 	return allCustomFields, nil
 }

@@ -7,6 +7,7 @@ import (
 // Team is used to group related projects and people together within an
 // organization. Each project in an organization is associated with a team.
 type Team struct {
+	client *Client
 
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
@@ -33,17 +34,20 @@ func (t *Team) Fetch(client *Client) error {
 }
 
 // Teams returns the compact records for all teams in the organization visible to the authorized user
-func (w *Workspace) Teams(client *Client, options ...*Options) ([]*Team, *NextPage, error) {
-	client.trace("Listing teams in workspace %s...\n", w.ID)
+func (w *Workspace) Teams(options ...*Options) ([]*Team, *NextPage, error) {
+	w.client.trace("Listing teams in workspace %s...\n", w.ID)
 	var result []*Team
 
 	// Make the request
-	nextPage, err := client.get(fmt.Sprintf("/organizations/%s/teams", w.ID), nil, &result, options...)
+	nextPage, err := w.client.get(fmt.Sprintf("/organizations/%s/teams", w.ID), nil, &result, options...)
+	for _, r := range result {
+		r.client = w.client
+	}
 	return result, nextPage, err
 }
 
 // AllTeams repeatedly pages through all available teams in a workspace
-func (w *Workspace) AllTeams(client *Client, options ...*Options) ([]*Team, error) {
+func (w *Workspace) AllTeams(options ...*Options) ([]*Team, error) {
 	var allTeams []*Team
 	nextPage := &NextPage{}
 
@@ -57,12 +61,15 @@ func (w *Workspace) AllTeams(client *Client, options ...*Options) ([]*Team, erro
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		teams, nextPage, err = w.Teams(client, allOptions...)
+		teams, nextPage, err = w.Teams(allOptions...)
 		if err != nil {
 			return nil, err
 		}
 
 		allTeams = append(allTeams, teams...)
+	}
+	for _, r := range allTeams {
+		r.client = w.client
 	}
 	return allTeams, nil
 }

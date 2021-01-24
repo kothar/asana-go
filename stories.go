@@ -109,6 +109,8 @@ type StorySubtypeFields struct {
 // Stories are a form of history in the system, and as such they are read-
 // only. Once generated, it is not possible to modify a story.
 type Story struct {
+	client *Client
+
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -150,34 +152,39 @@ type Story struct {
 }
 
 // Stories lists all stories attached to a task
-func (t *Task) Stories(client *Client, opts ...*Options) ([]*Story, *NextPage, error) {
-	client.trace("Listing stories for %q", t.Name)
+func (t *Task) Stories(opts ...*Options) ([]*Story, *NextPage, error) {
+	t.client.trace("Listing stories for %q", t.Name)
 
 	var result []*Story
 
 	// Make the request
-	nextPage, err := client.get(fmt.Sprintf("/tasks/%s/stories", t.ID), nil, &result, opts...)
+	nextPage, err := t.client.get(fmt.Sprintf("/tasks/%s/stories", t.ID), nil, &result, opts...)
+	for _, r := range result {
+		r.client = t.client
+	}
 	return result, nextPage, err
 }
 
 // CreateComment adds a comment story to a task
-func (t *Task) CreateComment(client *Client, story *StoryBase) (*Story, error) {
-	client.info("Creating comment for task %q", t.Name)
+func (t *Task) CreateComment(story *StoryBase) (*Story, error) {
+	t.client.info("Creating comment for task %q", t.Name)
 
 	result := &Story{}
 
-	err := client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), story, result)
+	err := t.client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), story, result)
+	result.client = t.client
 	return result, err
 }
 
 // UpdateStory updates the story and returns the full record for the updated story.
 // Only comment stories can have their text updated, and only comment stories and attachment stories can be pinned.
 // Only one of text and html_text can be specified.
-func (s *Story) UpdateStory(client *Client, story *StoryBase) (*Story, error) {
-	client.info("Updating story %s", s.ID)
+func (s *Story) UpdateStory(story *StoryBase) (*Story, error) {
+	s.client.info("Updating story %s", s.ID)
 
 	result := &Story{}
 
-	err := client.put(fmt.Sprintf("/stories/%s", s.ID), nil, result)
+	err := s.client.put(fmt.Sprintf("/stories/%s", s.ID), nil, result)
+	result.client = s.client
 	return result, err
 }

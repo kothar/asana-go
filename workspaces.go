@@ -19,6 +19,7 @@ import (
 // announcements, you can still reference organizations in any workspace
 // parameter.
 type Workspace struct {
+	client *Client
 
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
@@ -49,12 +50,15 @@ func (c *Client) Workspaces(options ...*Options) ([]*Workspace, *NextPage, error
 
 	// Make the request
 	nextPage, err := c.get("/workspaces", nil, &result, options...)
+	for _, r := range result {
+		r.client = c
+	}
 	return result, nextPage, err
 }
 
 // AllWorkspaces repeatedly pages through all available workspaces for a client
 func (c *Client) AllWorkspaces(options ...*Options) ([]*Workspace, error) {
-	allWorkspaces := []*Workspace{}
+	var allWorkspaces []*Workspace
 	nextPage := &NextPage{}
 
 	var workspaces []*Workspace

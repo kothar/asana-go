@@ -2,15 +2,18 @@ package asana
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Attachment represents any file attached to a task in Asana,
 // whether it’s an uploaded file or one associated via a third-party service
 // such as Dropbox or Google Drive.
 type Attachment struct {
+	client *Client
+
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -45,13 +48,16 @@ type Attachment struct {
 }
 
 // Attachments lists all attachments attached to a task
-func (t *Task) Attachments(client *Client, opts ...*Options) ([]*Attachment, *NextPage, error) {
-	client.trace("Listing attachments for %q", t.Name)
+func (t *Task) Attachments(opts ...*Options) ([]*Attachment, *NextPage, error) {
+	t.client.trace("Listing attachments for %q", t.Name)
 
 	var result []*Attachment
 
 	// Make the request
-	nextPage, err := client.get(fmt.Sprintf("/tasks/%s/attachments", t.ID), nil, &result, opts...)
+	nextPage, err := t.client.get(fmt.Sprintf("/tasks/%s/attachments", t.ID), nil, &result, opts...)
+	for _, r := range result {
+		r.client = t.client
+	}
 	return result, nextPage, err
 }
 
@@ -61,13 +67,14 @@ type NewAttachment struct {
 	ContentType string
 }
 
-func (t *Task) CreateAttachment(client *Client, request *NewAttachment) (*Attachment, error) {
-	client.trace("Uploading attachment for %q", t.Name)
+func (t *Task) CreateAttachment(request *NewAttachment) (*Attachment, error) {
+	t.client.trace("Uploading attachment for %q", t.Name)
 
 	result := &Attachment{}
-	err := client.postMultipart(fmt.Sprintf("/tasks/%s/attachments", t.ID), result, "file", request.Reader, request.FileName, request.ContentType)
+	err := t.client.postMultipart(fmt.Sprintf("/tasks/%s/attachments", t.ID), result, "file", request.Reader, request.FileName, request.ContentType)
 	if err != nil {
 		return nil, errors.Wrap(err, "Upload attachment")
 	}
+	result.client = t.client
 	return result, nil
 }
