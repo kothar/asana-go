@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/OP-Solutions/asana-go"
+	"bitbucket.org/mikehouston/asana-go"
 	"github.com/jessevdk/go-flags"
 )
 
