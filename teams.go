@@ -68,8 +68,5 @@ func (w *Workspace) AllTeams(options ...*Options) ([]*Team, error) {
 
 		allTeams = append(allTeams, teams...)
 	}
-	for _, r := range allTeams {
-		r.client = w.client
-	}
 	return allTeams, nil
 }

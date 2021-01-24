@@ -253,8 +253,5 @@ func (w *Workspace) AllCustomFields(options ...*Options) ([]*CustomField, error)
 
 		allCustomFields = append(allCustomFields, customFields...)
 	}
-	for _, r := range allCustomFields {
-		r.client = w.client
-	}
 	return allCustomFields, nil
 }

@@ -87,8 +87,5 @@ func (w *Workspace) AllUsers(options ...*Options) ([]*User, error) {
 
 		allUsers = append(allUsers, users...)
 	}
-	for _, r := range allUsers {
-		r.client = w.client
-	}
 	return allUsers, nil
 }

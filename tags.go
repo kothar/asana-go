@@ -95,9 +95,6 @@ func (w *Workspace) AllTags(options ...*Options) ([]*Tag, error) {
 
 		allTags = append(allTags, tags...)
 	}
-	for _, r := range allTags {
-		r.client = w.client
-	}
 	return allTags, nil
 }
 

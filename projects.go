@@ -314,9 +314,6 @@ func (t *Team) AllProjects(options ...*Options) ([]*Project, error) {
 
 		allProjects = append(allProjects, projects...)
 	}
-	for _, r := range allProjects {
-		r.client = t.client
-	}
 	return allProjects, nil
 }
 
