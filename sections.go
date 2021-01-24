@@ -19,6 +19,8 @@ type SectionBase struct {
 // The ‘memberships’ property when getting a task will return the information for the
 // section or the column under ‘section’ in the response.
 type Section struct {
+	client *Client
+
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -47,22 +49,26 @@ func (s *Section) Delete(client *Client) error {
 }
 
 // Sections returns a list of sections in this project
-func (p *Project) Sections(client *Client, opts ...*Options) ([]*Section, *NextPage, error) {
-	client.trace("Listing sections in %q", p.Name)
+func (p *Project) Sections(opts ...*Options) ([]*Section, *NextPage, error) {
+	p.client.trace("Listing sections in %q", p.Name)
 	var result []*Section
 
 	// Make the request
-	nextPage, err := client.get(fmt.Sprintf("/projects/%s/sections", p.ID), nil, &result, opts...)
+	nextPage, err := p.client.get(fmt.Sprintf("/projects/%s/sections", p.ID), nil, &result, opts...)
+	for _, r := range result {
+		r.client = p.client
+	}
 	return result, nextPage, err
 }
 
 // CreateSection creates a new section in the given project
-func (p *Project) CreateSection(client *Client, section *SectionBase) (*Section, error) {
-	client.info("Creating section %q", section.Name)
+func (p *Project) CreateSection(section *SectionBase) (*Section, error) {
+	p.client.info("Creating section %q", section.Name)
 
 	result := &Section{}
 
-	err := client.post(fmt.Sprintf("/projects/%s/sections", p.ID), section, result)
+	err := p.client.post(fmt.Sprintf("/projects/%s/sections", p.ID), section, result)
+	result.client = p.client
 	return result, err
 }
 
@@ -79,9 +85,9 @@ type SectionInsertRequest struct {
 // Sections cannot be moved between projects.
 //
 // At this point in time, moving sections is not supported in list views, only board views.
-func (p *Project) InsertSection(client *Client, request *SectionInsertRequest) error {
-	client.info("Moving section %s", request.Section)
+func (p *Project) InsertSection(request *SectionInsertRequest) error {
+	p.client.info("Moving section %s", request.Section)
 
-	err := client.post(fmt.Sprintf("projects/%s/sections/insert", p.ID), request, nil)
+	err := p.client.post(fmt.Sprintf("projects/%s/sections/insert", p.ID), request, nil)
 	return err
 }
