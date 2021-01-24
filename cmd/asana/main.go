@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jessevdk/go-flags"
 	"log"
 	"mime"
 	"net/http"
@@ -10,7 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"bitbucket.org/mikehouston/asana-go"
+	"github.com/OP-Solutions/asana-go"
+	"github.com/jessevdk/go-flags"
 )
 
 var options struct {
@@ -70,7 +70,7 @@ func main() {
 
 			for _, w := range options.Workspace {
 				workspace := &asana.Workspace{ID: w}
-				check(ListProjects(client, workspace))
+				check(ListProjects(workspace))
 			}
 			return
 		}
@@ -83,12 +83,12 @@ func main() {
 					Name: options.AddSection,
 				}
 
-				_, err := project.CreateSection(client, request)
+				_, err := project.CreateSection(request)
 				check(err)
 				return
 			}
 
-			fmtProject(client, project)
+			fmtProject(project)
 		}
 		return
 	}
@@ -99,22 +99,22 @@ func main() {
 
 		fmt.Printf("Task %s: %q\n", task.ID, task.Name)
 		if options.Attach != "" {
-			addAttachment(task, client)
+			addAttachment(task)
 			return
 		}
 
-		fmtTask(task, client)
+		fmtTask(task)
 	}
 }
 
-func fmtProject(client *asana.Client, project *asana.Project) {
+func fmtProject(project *asana.Project) {
 	fmt.Println("\nSections:")
-	check(ListSections(client, project))
+	check(ListSections(project))
 	fmt.Println("\nTasks:")
-	check(ListTasks(client, project))
+	check(ListTasks(project))
 }
 
-func fmtTask(task *asana.Task, client *asana.Client) {
+func fmtTask(task *asana.Task) {
 	fmt.Printf("  Completed: %v\n", task.Completed)
 	if task.Completed != nil && !*task.Completed {
 		fmt.Printf("  Due: %s\n", task.DueAt)
@@ -123,7 +123,7 @@ func fmtTask(task *asana.Task, client *asana.Client) {
 		fmt.Printf("  Notes: %q\n", task.Notes)
 	}
 	// Get subtasks
-	subtasks, nextPage, err := task.Subtasks(client)
+	subtasks, nextPage, err := task.Subtasks()
 	check(err)
 	_ = nextPage
 	for _, subtask := range subtasks {
@@ -131,11 +131,11 @@ func fmtTask(task *asana.Task, client *asana.Client) {
 	}
 }
 
-func addAttachment(task *asana.Task, client *asana.Client) {
+func addAttachment(task *asana.Task) {
 	f, err := os.Open(options.Attach)
 	check(err)
 	defer f.Close()
-	a, err := task.CreateAttachment(client, &asana.NewAttachment{
+	a, err := task.CreateAttachment(&asana.NewAttachment{
 		Reader:      f,
 		FileName:    f.Name(),
 		ContentType: mime.TypeByExtension(filepath.Ext(f.Name())),

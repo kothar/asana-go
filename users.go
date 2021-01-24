@@ -1,6 +1,8 @@
 package asana
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // User represents an account in Asana that can be given access to various
 // workspaces, projects, and tasks.
@@ -9,6 +11,7 @@ import "fmt"
 // However, the special string identifier me can be used anywhere a user ID is
 // accepted, to refer to the current authenticated user.
 type User struct {
+	client *Client
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -41,26 +44,29 @@ func (c *Client) CurrentUser() (*User, error) {
 }
 
 // Fetch loads the full details for this User
-func (u *User) Fetch(client *Client, options ...*Options) error {
-	client.trace("Loading details for user %q", u.ID)
+func (u *User) Fetch(options ...*Options) error {
+	u.client.trace("Loading details for user %q", u.ID)
 
-	_, err := client.get(fmt.Sprintf("/users/%s", u.ID), nil, u, options...)
+	_, err := u.client.get(fmt.Sprintf("/users/%s", u.ID), nil, u, options...)
 	return err
 }
 
 // Users returns the compact records for all users in the organization visible to the authorized user
-func (w *Workspace) Users(client *Client, options ...*Options) ([]*User, *NextPage, error) {
-	client.trace("Listing users in workspace %s...\n", w.ID)
+func (w *Workspace) Users(options ...*Options) ([]*User, *NextPage, error) {
+	w.client.trace("Listing users in workspace %s...\n", w.ID)
 	var result []*User
 
 	// Make the request
-	queryOptions := append([]*Options{&Options{Workspace: w.ID}}, options...)
-	nextPage, err := client.get("/users", nil, &result, queryOptions...)
+	queryOptions := append([]*Options{{Workspace: w.ID}}, options...)
+	nextPage, err := w.client.get("/users", nil, &result, queryOptions...)
+	for _, r := range result {
+		r.client = w.client
+	}
 	return result, nextPage, err
 }
 
 // AllUsers repeatedly pages through all available users in a workspace
-func (w *Workspace) AllUsers(client *Client, options ...*Options) ([]*User, error) {
+func (w *Workspace) AllUsers(options ...*Options) ([]*User, error) {
 	var allUsers []*User
 	nextPage := &NextPage{}
 
@@ -74,7 +80,7 @@ func (w *Workspace) AllUsers(client *Client, options ...*Options) ([]*User, erro
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		users, nextPage, err = w.Users(client, allOptions...)
+		users, nextPage, err = w.Users(allOptions...)
 		if err != nil {
 			return nil, err
 		}
