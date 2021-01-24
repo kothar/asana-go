@@ -29,6 +29,8 @@ type TagBase struct {
 // heavily on it. Unlike projects, tags do not provide any ordering on the
 // tasks they are associated with.
 type Tag struct {
+	client *Client
+
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
 
@@ -50,26 +52,29 @@ type Tag struct {
 }
 
 // Fetch loads the full details for this Tag
-func (t *Tag) Fetch(client *Client, options ...*Options) error {
-	client.trace("Loading details for tag %q", t.Name)
+func (t *Tag) Fetch(options ...*Options) error {
+	t.client.trace("Loading details for tag %q", t.Name)
 
-	_, err := client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t, options...)
+	_, err := t.client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t, options...)
 	return err
 }
 
 // Tags returns a list of tags in this workspace
-func (w *Workspace) Tags(client *Client, options ...*Options) ([]*Tag, *NextPage, error) {
-	client.trace("Listing tags in %q", w.Name)
+func (w *Workspace) Tags(options ...*Options) ([]*Tag, *NextPage, error) {
+	w.client.trace("Listing tags in %q", w.Name)
 
 	var result []*Tag
 
 	// Make the request
-	nextPage, err := client.get(fmt.Sprintf("/workspaces/%s/tags", w.ID), nil, &result, options...)
+	nextPage, err := w.client.get(fmt.Sprintf("/workspaces/%s/tags", w.ID), nil, &result, options...)
+	for _, r := range result {
+		r.client = w.client
+	}
 	return result, nextPage, err
 }
 
 // AllTags repeatedly pages through all available tags in a workspace
-func (w *Workspace) AllTags(client *Client, options ...*Options) ([]*Tag, error) {
+func (w *Workspace) AllTags(options ...*Options) ([]*Tag, error) {
 	allTags := []*Tag{}
 	nextPage := &NextPage{}
 
@@ -83,7 +88,7 @@ func (w *Workspace) AllTags(client *Client, options ...*Options) ([]*Tag, error)
 		}
 
 		allOptions := append([]*Options{page}, options...)
-		tags, nextPage, err = w.Tags(client, allOptions...)
+		tags, nextPage, err = w.Tags(allOptions...)
 		if err != nil {
 			return nil, err
 		}
@@ -94,15 +99,16 @@ func (w *Workspace) AllTags(client *Client, options ...*Options) ([]*Tag, error)
 }
 
 // CreateTag adds a new tag to a workspace
-func (w *Workspace) CreateTag(client *Client, tag *TagBase) (*Tag, error) {
-	client.info("Creating tag %q in %q\n", tag.Name, w.Name)
+func (w *Workspace) CreateTag(tag *TagBase) (*Tag, error) {
+	w.client.info("Creating tag %q in %q\n", tag.Name, w.Name)
 
 	result := &Tag{}
 
-	err := client.post(fmt.Sprintf("/workspaces/%s/tags", w.ID), tag, result)
+	err := w.client.post(fmt.Sprintf("/workspaces/%s/tags", w.ID), tag, result)
 	if err != nil {
 		return nil, err
 	}
+	result.client = w.client
 
 	return result, nil
 }
