@@ -178,6 +178,6 @@ func (s *Story) UpdateStory(client *Client, story *StoryBase) (*Story, error) {
 
 	result := &Story{}
 
-	err := client.put(fmt.Sprintf("/stories/%s", s.ID), nil, result)
+	err := client.put(fmt.Sprintf("/stories/%s", s.ID), story, result)
 	return result, err
 }
