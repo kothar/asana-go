@@ -21,9 +21,10 @@ var (
 var options struct {
 	Token string `long:"token" description:"Personal Access Token used to authorize access to the API" env:"ASANA_TOKEN" required:"true"`
 
-	Workspace []string `long:"workspace" short:"w" description:"Workspace to access"`
-	Project   []string `long:"project" short:"p" description:"Project to access"`
-	Task      []string `long:"task" short:"t" description:"Task to access"`
+	Workspace    []string `long:"workspace" short:"w" description:"Workspace to access"`
+	Project      []string `long:"project" short:"p" description:"Project to access"`
+	Task         []string `long:"task" short:"t" description:"Task to access"`
+	UserTaskList []string `long:"user_task_list" short:"u" description:"UserTaskList to access"`
 
 	Attach     string `long:"attach" description:"Attach a file to a task"`
 	AddSection string `long:"add-section" description:"Add a new section to a project"`
@@ -63,6 +64,16 @@ func main() {
 	}
 	client.Verbose = options.Verbose
 	client.DefaultOptions.Enable = []asana.Feature{asana.StringIDs, asana.NewSections, asana.NewTaskSubtypes, asana.ProjectPrivacySetting}
+
+	// Load a user task list object
+	for _, u := range options.UserTaskList {
+		taskList := &asana.UserTaskList{ID: u}
+		check(taskList.Fetch(client))
+
+		fmt.Printf("  UserTaskList %s: %q (%s)\n", taskList.ID, taskList.Name, taskList.Owner.Name)
+
+		return
+	}
 
 	// Load a task object
 	if options.Task == nil {
