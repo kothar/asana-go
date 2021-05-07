@@ -181,3 +181,10 @@ func (s *Story) UpdateStory(client *Client, story *StoryBase) (*Story, error) {
 	err := client.put(fmt.Sprintf("/stories/%s", s.ID), nil, result)
 	return result, err
 }
+
+func (s *Story) Delete(client *Client) error {
+	client.trace("Delete story %s %s", s.ID, s.ResourceSubtype)
+
+	err := client.delete(fmt.Sprintf("/stories/%s", s.ID))
+	return err
+}

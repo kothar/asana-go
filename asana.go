@@ -381,6 +381,10 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 }
 
 func (c *Client) parseResponseData(data []byte, result interface{}, requestID xid.ID) error {
+	if result == nil {
+		return nil
+	}
+
 	if err := json.Unmarshal(data, result); err != nil {
 		return errors.Wrapf(err, "%s Unable to parse response data", requestID)
 	}

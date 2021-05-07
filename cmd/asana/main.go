@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"log"
@@ -22,6 +23,9 @@ var options struct {
 
 	Attach     string `long:"attach" description:"Attach a file to a task"`
 	AddSection string `long:"add-section" description:"Add a new section to a project"`
+
+	Stories bool `long:"stories" description:"List stories for a task"`
+	Clean   bool `long:"clean" description:"Clean all stories from a task"`
 
 	Debug   bool   `short:"d" long:"debug" description:"Show debug information"`
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose output"`
@@ -102,8 +106,35 @@ func main() {
 			addAttachment(task, client)
 			return
 		}
+		if options.Stories {
+			listStories(task, client)
+		}
+		if options.Clean {
+			cleanStories(task, client)
+		}
 
 		fmtTask(task, client)
+	}
+}
+
+func listStories(task *asana.Task, client *asana.Client) {
+	stories, _, _ := task.Stories(client)
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+
+	for _, s := range stories {
+		fmt.Printf("Story %s (%s):\n", s.ID, s.CreatedBy.Name)
+		check(enc.Encode(s))
+	}
+}
+
+func cleanStories(task *asana.Task, client *asana.Client) {
+	stories, _, _ := task.Stories(client)
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+
+	for _, s := range stories {
+		check(s.Delete(client))
 	}
 }
 
