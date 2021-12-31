@@ -17,7 +17,7 @@ type AppConfig struct {
 	ClientID     string
 	ClientSecret string
 	RedirectURL  string
-	DisplayUI    bool
+	DisplayUI    bool // Force prompt for user permission when authorizing
 }
 
 // App represents an Asana client application
