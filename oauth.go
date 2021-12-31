@@ -17,6 +17,7 @@ type AppConfig struct {
 	ClientID     string
 	ClientSecret string
 	RedirectURL  string
+	DisplayUI    bool
 }
 
 // App represents an Asana client application
@@ -26,11 +27,16 @@ type App struct {
 
 // NewApp creates a new App with the provided configuration
 func NewApp(config *AppConfig) *App {
+	endpoint := defaultOAuthEndpoint
+	if config.DisplayUI {
+		endpoint.AuthURL += "?display_ui=always"
+	}
+
 	return &App{
 		config: &oauth2.Config{
 			ClientID:     config.ClientID,
 			ClientSecret: config.ClientSecret,
-			Endpoint:     defaultOAuthEndpoint,
+			Endpoint:     endpoint,
 			RedirectURL:  config.RedirectURL,
 			Scopes:       nil,
 		},
