@@ -18,16 +18,18 @@ type EnumValueBase struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
 
-	Color string `json:"color"`
+	// The color of the enum option. Defaults to ‘none’.
+	Color string `json:"color,omitempty"`
 }
 
 type FieldType string
 
 // FieldTypes for CustomField.Type field
 const (
-	Text   FieldType = "text"
-	Enum   FieldType = "enum"
-	Number FieldType = "number"
+	Text      FieldType = "text"
+	Number    FieldType = "number"
+	Enum      FieldType = "enum"
+	MulitEnum FieldType = "multi_enum"
 )
 
 type LabelPosition string
@@ -89,7 +91,7 @@ type CustomFieldBase struct {
 	Precision *int `json:"precision,omitempty"`
 
 	// The type of the custom field. Must be one of the given values:
-	// 'text', 'enum', 'number'
+	// 'text', 'enum', 'number', 'multi_enum'
 	ResourceSubtype FieldType `json:"resource_subtype"`
 }
 
@@ -171,8 +173,8 @@ type CreateCustomFieldRequest struct {
 	// Required: The workspace to create a custom field in.
 	Workspace string `json:"workspace"`
 
-	// The discrete values the custom field can assume.
-	// Required if the custom field is of type ‘enum’.
+	// Conditional. Only relevant for custom fields of type enum.
+	// This array specifies the possible values which an enum custom field can adopt.
 	EnumOptions []*EnumValueBase `json:"enum_options,omitempty"`
 }
 
@@ -202,9 +204,13 @@ type CustomFieldValue struct {
 	// containing the number for the field.
 	NumberValue *float64 `json:"number_value,omitempty"`
 
-	// Custom fields of type enum will return an enum_value property
-	// containing an object that represents the selection of the enum value.
+	// Conditional. Only relevant for custom fields of type enum.
+	// This object is the chosen value of an enum custom field.
 	EnumValue *EnumValue `json:"enum_value,omitempty"`
+
+	// Conditional. Only relevant for custom fields of type multi_enum.
+	// This object is the chosen values of a multi_enum custom field.
+	MultiEnumValues []*EnumValue `json:"multi_enum_values,omitempty"`
 }
 
 // Fetch loads the full details for this CustomField
