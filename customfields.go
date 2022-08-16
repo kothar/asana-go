@@ -26,10 +26,21 @@ type FieldType string
 
 // FieldTypes for CustomField.Type field
 const (
-	Text      FieldType = "text"
-	Number    FieldType = "number"
-	Enum      FieldType = "enum"
-	MulitEnum FieldType = "multi_enum"
+	FieldTypeText   FieldType = "text"
+	FieldTypeNumber FieldType = "number"
+	FieldTypeEnum   FieldType = "enum"
+
+	// https://forum.asana.com/t/new-custom-field-types/32244
+	FieldTypeMultiEnum FieldType = "multi_enum"
+	FieldTypeDate      FieldType = "date"
+	FieldTypeBoolean   FieldType = "boolean"
+
+	// https://forum.asana.com/t/introducing-people-custom-field/187166
+	FieldTypePeople FieldType = "people"
+
+	Text   FieldType = FieldTypeText   // Deprecated - use FieldTypeText
+	Number FieldType = FieldTypeNumber // Deprecated - use FieldTypeNumber
+	Enum   FieldType = FieldTypeEnum   // Deprecated - use FieldTypeEnum
 )
 
 type LabelPosition string
@@ -91,7 +102,7 @@ type CustomFieldBase struct {
 	Precision *int `json:"precision,omitempty"`
 
 	// The type of the custom field. Must be one of the given values:
-	// 'text', 'enum', 'number', 'multi_enum'
+	// 'text', 'enum', 'number', 'multi_enum', 'date', 'boolean'
 	ResourceSubtype FieldType `json:"resource_subtype"`
 }
 
