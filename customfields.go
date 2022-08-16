@@ -207,6 +207,11 @@ func (c *Client) CreateCustomField(request *CreateCustomFieldRequest) (*CustomFi
 type CustomFieldValue struct {
 	CustomField
 
+	// A string representation for the value of the custom field. Integrations
+	// that don't require the underlying type should use this field to read values.
+	// Using this field will future-proof an app against new custom field types.
+	DisplayValue *string `json:"display_value,omitempty"`
+
 	// Custom fields of type text will return a text_value property containing
 	// the string of text for the field.
 	TextValue *string `json:"text_value,omitempty"`
@@ -215,6 +220,12 @@ type CustomFieldValue struct {
 	// containing the number for the field.
 	NumberValue *float64 `json:"number_value,omitempty"`
 
+	// Conditional. Only relevant for custom fields of type boolean.
+	BooleanValue *bool `json:"boolean_value,omitempty"`
+
+	// Conditional. Only relevant for custom fields of type date.
+	DateValue *string `json:"date_value,omitempty"`
+
 	// Conditional. Only relevant for custom fields of type enum.
 	// This object is the chosen value of an enum custom field.
 	EnumValue *EnumValue `json:"enum_value,omitempty"`
@@ -222,6 +233,10 @@ type CustomFieldValue struct {
 	// Conditional. Only relevant for custom fields of type multi_enum.
 	// This object is the chosen values of a multi_enum custom field.
 	MultiEnumValues []*EnumValue `json:"multi_enum_values,omitempty"`
+
+	// Conditional. Only relevant for custom fields of type people.
+	// This object is the chosen values of a people custom field.
+	PeopleValues []*User `json:"people_values,omitempty"`
 }
 
 // Fetch loads the full details for this CustomField
