@@ -65,7 +65,14 @@ func (err *Error) withType(statusCode int, errorType string) *Error {
 
 func IsRecoverableError(err error) bool {
 	if e, ok := IsAsanaError(err); ok {
-		return e.StatusCode >= 500 && e.StatusCode < 600
+		return e.StatusCode/100 == 5
+	}
+	return false
+}
+
+func IsFatalError(err error) bool {
+	if e, ok := IsAsanaError(err); ok {
+		return e.StatusCode/100 != 5
 	}
 	return false
 }
