@@ -3,6 +3,7 @@ package asana
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 type EnumValue struct {
@@ -20,6 +21,11 @@ type EnumValueBase struct {
 
 	// The color of the enum option. Defaults to ‘none’.
 	Color string `json:"color,omitempty"`
+}
+
+type DateValue struct {
+	Date     Date      `json:"date"`
+	DateTime time.Time `json:"date_time,omitempty"`
 }
 
 type FieldType string
@@ -224,7 +230,7 @@ type CustomFieldValue struct {
 	BooleanValue *bool `json:"boolean_value,omitempty"`
 
 	// Conditional. Only relevant for custom fields of type date.
-	DateValue *string `json:"date_value,omitempty"`
+	DateValue *DateValue `json:"date_value,omitempty"`
 
 	// Conditional. Only relevant for custom fields of type enum.
 	// This object is the chosen value of an enum custom field.
@@ -236,7 +242,7 @@ type CustomFieldValue struct {
 
 	// Conditional. Only relevant for custom fields of type people.
 	// This object is the chosen values of a people custom field.
-	PeopleValues []*User `json:"people_values,omitempty"`
+	PeopleValue []*User `json:"people_value,omitempty"`
 }
 
 // Fetch loads the full details for this CustomField
