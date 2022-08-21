@@ -82,19 +82,12 @@ type CustomFieldBase struct {
 	// The description of the custom field.
 	Description string `json:"description,omitempty"`
 
-	// Opt In. The description of the custom field.
-	Enabled *bool `json:"enabled,omitempty"`
-
 	// The format of this custom field.
 	Format Format `json:"format,omitempty"`
 
 	// Conditional. This flag describes whether a follower of a task with this
 	// field should receive inbox notifications from changes to this field.
 	HasNotificationsEnabled *bool `json:"has_notifications_enabled,omitempty"`
-
-	// This flag describes whether this custom field is available to every container
-	// in the workspace. Before project-specific custom fields, this field was always true.
-	IsGlobalToWorkspace *bool `json:"is_global_to_workspace,omitempty"`
 
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
@@ -127,6 +120,14 @@ type CustomField struct {
 	// Only relevant for custom fields of type ‘Enum’. This array specifies
 	// the possible values which an enum custom field can adopt.
 	EnumOptions []*EnumValue `json:"enum_options,omitempty"`
+
+	// Read-only: This flag describes whether this custom field is available to every container
+	// in the workspace. Before project-specific custom fields, this field was always true.
+	IsGlobalToWorkspace *bool `json:"is_global_to_workspace,omitempty"`
+
+	// Determines whether the custom field is available for editing on a task
+	// (i.e. the field is associated with one of the task's parent projects)
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type CustomFieldSetting struct {
@@ -182,6 +183,46 @@ func (p *Project) RemoveCustomFieldSetting(client *Client, customFieldID string)
 
 	err := client.post(fmt.Sprintf("/projects/%s/removeCustomFieldSetting", p.ID), m, &json.RawMessage{})
 	return err
+}
+
+type ProjectLocalCustomField struct {
+	CustomFieldBase
+
+	// Only relevant for custom fields of type ‘Enum’. This array specifies
+	// the possible values which an enum custom field can adopt.
+	EnumOptions []*EnumValueBase `json:"enum_options,omitempty"`
+}
+
+type AddProjectLocalCustomFieldRequest struct {
+	CustomField  ProjectLocalCustomField `json:"custom_field"`
+	Important    bool                    `json:"is_important,omitempty"`
+	InsertBefore string                  `json:"insert_before,omitempty"`
+	InsertAfter  string                  `json:"insert_after,omitempty"`
+}
+
+func (p *Project) AddProjectLocalCustomField(client *Client, request *AddProjectLocalCustomFieldRequest) (*CustomFieldSetting, error) {
+	client.trace("Attach custom field %q to project %q", request.CustomField, p.ID)
+
+	// Custom request encoding
+	m := map[string]interface{}{}
+	m["custom_field"] = request.CustomField
+	m["is_important"] = request.Important
+
+	if request.InsertAfter == "-" {
+		m["insert_after"] = nil
+	} else if request.InsertAfter != "" {
+		m["insert_after"] = request.InsertAfter
+	}
+
+	if request.InsertBefore == "-" {
+		m["insert_before"] = nil
+	} else if request.InsertBefore != "" {
+		m["insert_before"] = request.InsertBefore
+	}
+
+	result := &CustomFieldSetting{}
+	err := client.post(fmt.Sprintf("/projects/%s/addCustomFieldSetting", p.ID), m, result)
+	return result, err
 }
 
 type CreateCustomFieldRequest struct {
