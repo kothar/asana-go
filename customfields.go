@@ -24,8 +24,8 @@ type EnumValueBase struct {
 }
 
 type DateValue struct {
-	Date     Date      `json:"date"`
-	DateTime time.Time `json:"date_time,omitempty"`
+	Date     *Date      `json:"date,omitempty"`
+	DateTime *time.Time `json:"date_time,omitempty"`
 }
 
 type FieldType string
