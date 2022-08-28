@@ -391,3 +391,11 @@ func (c *Client) parseResponseData(data []byte, result interface{}, requestID xi
 
 	return nil
 }
+
+func IsTrue(value *bool) bool {
+	return value != nil && *value
+}
+
+func Bool(value bool) *bool {
+	return &value
+}
