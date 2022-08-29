@@ -55,7 +55,7 @@ type Options struct {
 	// means doing proper line breaking and indentation to make it readable.
 	// This will take extra time and increase the response size so it is
 	// advisable only to use this during debugging.
-	Pretty bool `json:"pretty,omitempty" url:"opt_pretty,omitempty"`
+	Pretty *bool `json:"pretty,omitempty" url:"opt_pretty,omitempty"`
 
 	// In environments that do not support the full range of HTTP verbs, this
 	// can be helpful to override the request method sent by the browser,
@@ -105,11 +105,13 @@ type Options struct {
 	Offset string `json:"offset,omitempty" url:"offset,omitempty"`
 
 	// Headers
-	FastAPI bool      `json:"-" url:"-"`
 	Enable  []Feature `json:"-" url:"-"`
 	Disable []Feature `json:"-" url:"-"`
 
 	// Filters
 	Workspace string `json:"workspace,omitempty" url:"workspace,omitempty"`
 	Owner     string `json:"owner,omitempty" url:"owner,omitempty"`
+
+	// Request options
+	Debug *bool `json:"-" url:"-"`
 }

@@ -45,7 +45,6 @@ type Client struct {
 	BaseURL    *url.URL
 	HTTPClient *http.Client
 
-	Debug          bool
 	Verbose        []bool
 	DefaultOptions Options
 }
@@ -113,7 +112,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 
 	// Encode default options
-	if c.Debug {
+	if IsTrue(options.Debug) {
 		log.Printf("%s Default options: %+v", requestID, c.DefaultOptions)
 	}
 	q, err := query.Values(c.DefaultOptions)
@@ -123,7 +122,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 
 	// Encode data
 	if data != nil {
-		if c.Debug {
+		if IsTrue(options.Debug) {
 			log.Printf("%s Data: %+v", requestID, data)
 		}
 
@@ -141,7 +140,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 
 	// Encode query options
 	for _, options := range opts {
-		if c.Debug {
+		if IsTrue(options.Debug) {
 			log.Printf("%s Options: %+v", requestID, options)
 		}
 		if err := mergeQuery(q, options); err != nil {
@@ -153,7 +152,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 
 	// Make request
-	if c.Debug {
+	if IsTrue(options.Debug) {
 		log.Printf("%s GET %s", requestID, path)
 	}
 	request, err := http.NewRequest(http.MethodGet, c.getURL(path), nil)
@@ -167,7 +166,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 
 	// Parse the result
-	resultData, err := c.parseResponse(resp, result, requestID)
+	resultData, err := c.parseResponse(resp, result, requestID, options)
 	if err != nil {
 		return nil, err
 	}
@@ -176,10 +175,6 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 }
 
 func (c *Client) addHeaders(request *http.Request, options *Options) {
-	if options.FastAPI {
-		request.Header.Add("Asana-Fast-Api", "true")
-	}
-
 	if len(options.Enable) > 0 {
 		request.Header.Add("Asana-Enable", joinFeatures(options.Enable))
 	}
@@ -187,7 +182,7 @@ func (c *Client) addHeaders(request *http.Request, options *Options) {
 		request.Header.Add("Asana-Disable", joinFeatures(options.Disable))
 	}
 
-	if c.Debug {
+	if IsTrue(options.Debug) {
 		request.Header.Write(os.Stderr)
 	}
 }
@@ -245,7 +240,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 	}
 
 	// Make request
-	if c.Debug {
+	if IsTrue(options.Debug) {
 		body, _ := json.MarshalIndent(req, "", "  ")
 		log.Printf("%s %s %s\n%s", requestID, method, path, body)
 	}
@@ -261,7 +256,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 		return errors.Wrapf(err, "%s error", method)
 	}
 
-	_, err = c.parseResponse(resp, result, requestID)
+	_, err = c.parseResponse(resp, result, requestID, options)
 	return err
 }
 
@@ -294,7 +289,7 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 		return errors.Wrapf(err, "%s unable to merge options", requestID)
 	}
 
-	if c.Debug {
+	if IsTrue(options.Debug) {
 		log.Printf("%s POST multipart %s\n%s=%s;ContentType=%s", requestID, path, field, filename, contentType)
 	}
 	defer r.Close()
@@ -335,11 +330,11 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 		return errors.Wrapf(err, "%s POST error", requestID)
 	}
 
-	_, err = c.parseResponse(resp, result, requestID)
+	_, err = c.parseResponse(resp, result, requestID, options)
 	return err
 }
 
-func (c *Client) parseResponse(resp *http.Response, result interface{}, requestID xid.ID) (*Response, error) {
+func (c *Client) parseResponse(resp *http.Response, result interface{}, requestID xid.ID, options *Options) (*Response, error) {
 
 	// Get response body
 	defer resp.Body.Close()
@@ -348,7 +343,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 		return nil, err
 	}
 
-	if c.Debug {
+	if IsTrue(options.Debug) {
 		resp.Header.Write(os.Stderr)
 		fmt.Fprintf(os.Stderr, "%s %s\n%s\n", requestID, resp.Status, body)
 	}

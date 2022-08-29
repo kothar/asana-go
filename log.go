@@ -17,7 +17,7 @@ func (c *Client) trace(format string, args ...interface{}) {
 }
 
 func (c *Client) debug(format string, args ...interface{}) {
-	if c.Debug {
+	if IsTrue(c.DefaultOptions.Debug) {
 		log.Printf(format, args...)
 	}
 }
