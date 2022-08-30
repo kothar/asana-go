@@ -398,7 +398,7 @@ type AddDependenciesRequest struct {
 func (t *Task) AddDependencies(client *Client, request *AddDependenciesRequest) error {
 	client.trace("Adding dependencies to task %q", t.ID)
 
-	err := client.post(fmt.Sprintf("/tasks/%s/addDependencies", t.ID), request, &json.RawMessage{})
+	err := client.post(fmt.Sprintf("/tasks/%s/addDependencies", t.ID), request, nil)
 	return err
 }
 
