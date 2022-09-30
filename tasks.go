@@ -177,6 +177,7 @@ type UpdateTaskRequest struct {
 
 	Assignee  string   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
 	Followers []string `json:"followers,omitempty"` // Array of users following this task.
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
 // Task is the basic object around which many operations in Asana are
