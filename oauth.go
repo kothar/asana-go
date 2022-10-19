@@ -2,6 +2,7 @@ package asana
 
 import (
 	"context"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -52,6 +53,15 @@ func (a *App) AuthCodeURL(state string) string {
 func (a *App) Exchange(code string) (*oauth2.Token, error) {
 	ctx := context.Background()
 	return a.config.Exchange(ctx, code)
+}
+
+// see oauth2 package
+func (a *App) Refresh(token *oauth2.Token) (*oauth2.Token, error) {
+	ctx := context.Background()
+	invalidToken := *token
+	invalidToken.Expiry = time.Time{}
+	ts := a.config.TokenSource(ctx, token)
+	return ts.Token()
 }
 
 // NewClient creates a new Asana client using the provided credentials
