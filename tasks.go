@@ -287,10 +287,10 @@ type Task struct {
 }
 
 // Fetch loads the full details for this Task
-func (t *Task) Fetch(client *Client) error {
+func (t *Task) Fetch(client *Client, opts ...*Options) error {
 	client.trace("Loading task details for %q", t.Name)
 
-	_, err := client.get(fmt.Sprintf("/tasks/%s", t.ID), nil, t)
+	_, err := client.get(fmt.Sprintf("/tasks/%s", t.ID), nil, t, opts...)
 	return err
 }
 
