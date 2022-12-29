@@ -1,7 +1,6 @@
 package asana
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -175,8 +174,8 @@ type CreateMembership struct {
 type UpdateTaskRequest struct {
 	TaskBase
 
-	Assignee  string   `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
-	Followers []string `json:"followers,omitempty"` // Array of users following this task.
+	Assignee     string                 `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
+	Followers    []string               `json:"followers,omitempty"` // Array of users following this task.
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 
@@ -341,7 +340,7 @@ func (t *Task) AddProject(client *Client, request *AddProjectRequest) error {
 		m["section"] = request.Section
 	}
 
-	err := client.post(fmt.Sprintf("/tasks/%s/addProject", t.ID), m, &json.RawMessage{})
+	err := client.post(fmt.Sprintf("/tasks/%s/addProject", t.ID), m, nil)
 	return err
 }
 
@@ -353,7 +352,7 @@ func (t *Task) RemoveProject(client *Client, projectID string) error {
 		"project": projectID,
 	}
 
-	err := client.post(fmt.Sprintf("/tasks/%s/removeProject", t.ID), m, &json.RawMessage{})
+	err := client.post(fmt.Sprintf("/tasks/%s/removeProject", t.ID), m, nil)
 	return err
 }
 
@@ -384,7 +383,7 @@ func (t *Task) SetParent(client *Client, request *SetParentRequest) error {
 		m["insert_before"] = request.InsertBefore
 	}
 
-	err := client.post(fmt.Sprintf("/tasks/%s/setParent", t.ID), m, &json.RawMessage{})
+	err := client.post(fmt.Sprintf("/tasks/%s/setParent", t.ID), m, nil)
 	return err
 }
 
@@ -414,7 +413,7 @@ type AddDependentsRequest struct {
 func (t *Task) AddDependents(client *Client, request *AddDependentsRequest) error {
 	client.trace("Adding dependents to task %q", t.ID)
 
-	err := client.post(fmt.Sprintf("/tasks/%s/addDependents", t.ID), request, &json.RawMessage{})
+	err := client.post(fmt.Sprintf("/tasks/%s/addDependents", t.ID), request, nil)
 	return err
 }
 

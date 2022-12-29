@@ -1,7 +1,6 @@
 package asana
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -181,7 +180,7 @@ func (p *Project) RemoveCustomFieldSetting(client *Client, customFieldID string)
 		"custom_field": customFieldID,
 	}
 
-	err := client.post(fmt.Sprintf("/projects/%s/removeCustomFieldSetting", p.ID), m, &json.RawMessage{})
+	err := client.post(fmt.Sprintf("/projects/%s/removeCustomFieldSetting", p.ID), m, nil)
 	return err
 }
 
