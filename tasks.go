@@ -468,6 +468,10 @@ func (t *Task) CreateSubtask(client *Client, task *Task) (*Task, error) {
 	return result, err
 }
 
+func (t *Task) GetID() string {
+	return t.ID
+}
+
 // QueryTasks returns the compact task records for some filtered set of tasks.
 // Use one or more of the parameters provided to filter the tasks returned.
 // You must specify a project or tag if you do not specify assignee and workspace.

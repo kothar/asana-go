@@ -59,6 +59,10 @@ type Attachment struct {
 	ViewURL string `json:"view_url,omitempty"`
 }
 
+func (a *Attachment) GetID() string {
+	return a.ID
+}
+
 // Attachments lists all attachments attached to a task
 func (t *Task) Attachments(client *Client, opts ...*Options) ([]*Attachment, *NextPage, error) {
 	client.trace("Listing attachments for %q", t.Name)

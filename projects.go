@@ -161,6 +161,10 @@ type Project struct {
 	Team *Team `json:"team,omitempty"`
 }
 
+func (p *Project) GetID() string {
+	return p.ID
+}
+
 // Fetch loads the full details for this Project
 func (p *Project) Fetch(client *Client, opts ...*Options) error {
 	client.trace("Loading project details for %q", p.Name)
