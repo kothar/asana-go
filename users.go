@@ -83,3 +83,27 @@ func (w *Workspace) AllUsers(client *Client, options ...*Options) ([]*User, erro
 	}
 	return allUsers, nil
 }
+
+// UserQuery represents a required query for the Favorite call
+type UserQuery struct {
+	// Required: The resource type of favorites to be returned
+	ResourceType string `url:"resource_type,omitempty"`
+	// Required: The workspace in which to get favorites.
+	Workspace string `url:"workspace,omitempty"`
+}
+
+// Favorite returns all of a user's favorites within a specified workspace
+// and of a given type. The results are ordered exactly as they appear in
+// the user's Asana sidebar in the web application. Note that this endpoint
+// currently only returns favorites for the current user (i.e., the user
+// associated with the authentication token).
+func (u *User) Favorite(client *Client, query *UserQuery, result any, options ...*Options) error {
+	if query == nil || query.ResourceType == "" || query.Workspace == "" {
+		return fmt.Errorf("invalid query: resource_type and workspace ID must be provided")
+	}
+
+	client.trace("Listing favorites for user %q", u.ID)
+
+	_, err := client.get(fmt.Sprintf("/users/%s/favorites", u.ID), query, result, options...)
+	return err
+}
