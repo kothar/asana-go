@@ -1,0 +1,53 @@
+version: 2
+updates:
+  # Enable version updates for Go modules
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "mikehouston"
+    assignees:
+      - "mikehouston"
+    commit-message:
+      prefix: "security"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "security"
+    # Group security updates for easier review
+    groups:
+      security-updates:
+        patterns:
+          - "*"
+        dependency-type: "direct"
+    # Allow both development and production dependencies
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Automatically merge minor and patch updates for security
+    auto-merge:
+      dependency-type: "indirect"
+      update-type: "security"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "mikehouston"
+    assignees:
+      - "mikehouston"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "dependencies"

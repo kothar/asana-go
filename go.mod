@@ -1,6 +1,6 @@
 module bitbucket.org/mikehouston/asana-go
 
-go 1.23
+go 1.24.4
 
 require (
 	dario.cat/mergo v1.0.1
@@ -9,7 +9,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/xid v1.6.0
-	golang.org/x/oauth2 v0.24.0
+	golang.org/x/oauth2 v0.30.0
 )
 
 require (
