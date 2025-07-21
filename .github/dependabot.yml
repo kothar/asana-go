@@ -9,9 +9,9 @@ updates:
       time: "10:00"
     open-pull-requests-limit: 10
     reviewers:
-      - "mikehouston"
+      - "kothar"
     assignees:
-      - "mikehouston"
+      - "kothar"
     commit-message:
       prefix: "security"
       include: "scope"
@@ -23,14 +23,14 @@ updates:
       security-updates:
         patterns:
           - "*"
-        dependency-type: "direct"
+        dependency-type: "production"
     # Allow both development and production dependencies
     allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
+      - dependency-type: "production"
+      - dependency-type: "development"
     # Automatically merge minor and patch updates for security
     auto-merge:
-      dependency-type: "indirect"
+      dependency-type: "development"
       update-type: "security"
 
   # Enable version updates for GitHub Actions
@@ -42,9 +42,9 @@ updates:
       time: "10:00"
     open-pull-requests-limit: 5
     reviewers:
-      - "mikehouston"
+      - "kothar"
     assignees:
-      - "mikehouston"
+      - "kothar"
     commit-message:
       prefix: "ci"
       include: "scope"
