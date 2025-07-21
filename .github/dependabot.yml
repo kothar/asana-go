@@ -13,7 +13,7 @@ updates:
     assignees:
       - "kothar"
     commit-message:
-      prefix: "security"
+      prefix: "deps"
       include: "scope"
     labels:
       - "dependencies"
@@ -23,15 +23,10 @@ updates:
       security-updates:
         patterns:
           - "*"
-        dependency-type: "production"
     # Allow both development and production dependencies
     allow:
-      - dependency-type: "production"
-      - dependency-type: "development"
-    # Automatically merge minor and patch updates for security
-    auto-merge:
-      dependency-type: "development"
-      update-type: "security"
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
