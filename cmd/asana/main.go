@@ -11,7 +11,7 @@ import (
     "os"
     "path/filepath"
 
-    "bitbucket.org/mikehouston/asana-go"
+    "github.com/kothar/asana-go"
 )
 
 var (

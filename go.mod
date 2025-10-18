@@ -1,4 +1,4 @@
-module bitbucket.org/mikehouston/asana-go
+module github.com/kothar/asana-go
 
 go 1.24.4
 
