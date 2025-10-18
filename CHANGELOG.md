@@ -41,7 +41,7 @@ This release addresses critical security vulnerabilities in the Go standard libr
 ### Upgrade Instructions
 
 1. Update your Go installation to 1.24.4 or later
-2. Run `go get -u bitbucket.org/mikehouston/asana-go` to get the latest version
+2. Run `go get -u github.com/kothar/asana-go` to get the latest version
 3. Run `go mod tidy` to ensure dependencies are updated
 4. Test your application thoroughly after updating
 

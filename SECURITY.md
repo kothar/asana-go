@@ -39,7 +39,7 @@ import (
     "context"
     "net/http"
     "time"
-    "bitbucket.org/mikehouston/asana-go"
+    "github.com/kothar/asana-go"
 )
 
 func main() {

@@ -1,5 +1,5 @@
 // Package asana provides a client for the Asana API
-package asana // import "bitbucket.org/mikehouston/asana-go"
+package asana // import "github.com/kothar/asana-go"
 
 import (
 	"bytes"
