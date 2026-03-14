@@ -82,6 +82,17 @@ type ExternalData struct {
 	Data string `json:"data,omitempty"`
 }
 
+// Recurrence configures how a task repeats.
+//
+// Asana exposes this as a top-level `recurrence` object on task payloads.
+// The nested schema is not fully documented, so Data remains flexible while
+// still preserving the known top-level shape for field selection and JSON
+// round-tripping.
+type Recurrence struct {
+	Type string                 `json:"type,omitempty"`
+	Data map[string]interface{} `json:"data,omitempty"`
+}
+
 // TaskBase contains the modifiable fields for the Task object
 type TaskBase struct {
 	// Name of the task. This is generally a short sentence fragment that
@@ -137,6 +148,9 @@ type TaskBase struct {
 	// when viewed in a list of subtasks or in a user’s My Tasks.
 	// Requires that the NewSections deprecation is enabled.
 	IsRenderedAsSeparator bool `json:"is_rendered_as_separator,omitempty"`
+
+	// Configuration for repeating this task.
+	Recurrence *Recurrence `json:"recurrence,omitempty"`
 }
 
 // Validate checks the task data and fixes any problems
