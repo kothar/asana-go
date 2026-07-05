@@ -47,3 +47,57 @@ func TestCustomFieldBase_Precision_SerializeZero(t *testing.T) {
     }
 
 }
+
+func TestCustomField_AsanaCreatedField_Parse(t *testing.T) {
+    cf := &CustomField{}
+    if err := json.Unmarshal([]byte(`
+{
+	"gid": "123",
+	"name": "Priority",
+	"resource_subtype": "enum",
+	"asana_created_field": "priority"
+}
+`), cf); err != nil {
+        t.Fatal(err)
+    }
+
+    if cf.AsanaCreatedField != "priority" {
+        t.Errorf("Expected AsanaCreatedField to be %q, but saw %q", "priority", cf.AsanaCreatedField)
+    }
+    if !cf.IsAsanaCreated() {
+        t.Errorf("Expected IsAsanaCreated to be true for an Asana-created field")
+    }
+}
+
+func TestCustomField_AsanaCreatedField_Absent(t *testing.T) {
+    cf := &CustomField{}
+    if err := json.Unmarshal([]byte(`
+{
+	"gid": "123",
+	"name": "Effort",
+	"resource_subtype": "number"
+}
+`), cf); err != nil {
+        t.Fatal(err)
+    }
+
+    if cf.AsanaCreatedField != "" {
+        t.Errorf("Expected AsanaCreatedField to be empty, but saw %q", cf.AsanaCreatedField)
+    }
+    if cf.IsAsanaCreated() {
+        t.Errorf("Expected IsAsanaCreated to be false for a user-created field")
+    }
+}
+
+// TestCustomField_AsanaCreatedField_RequestedInFields ensures the read-only
+// asana_created_field property is included in opt_fields when requesting all
+// fields for a CustomField, so it is populated on reads.
+func TestCustomField_AsanaCreatedField_RequestedInFields(t *testing.T) {
+    options := Fields(CustomField{})
+    for _, name := range options.Fields {
+        if name == "asana_created_field" {
+            return
+        }
+    }
+    t.Errorf("Expected Fields(CustomField{}) to include %q, got %v", "asana_created_field", options.Fields)
+}

@@ -127,6 +127,20 @@ type CustomField struct {
 	// Determines whether the custom field is available for editing on a task
 	// (i.e. the field is associated with one of the task's parent projects)
 	Enabled *bool `json:"enabled,omitempty"`
+
+	// Read-only. If this custom field is one that Asana creates and manages
+	// automatically (for example the built-in "Priority" and "Status" fields),
+	// this holds the non-empty identifier of that Asana-created field. It is
+	// empty for user-created custom fields. Custom fields with a non-empty value
+	// here cannot be created through the API.
+	AsanaCreatedField string `json:"asana_created_field,omitempty"`
+}
+
+// IsAsanaCreated reports whether this custom field is one that Asana creates and
+// manages automatically (such as the built-in "Priority" and "Status" fields).
+// Such fields cannot be recreated through the API.
+func (f *CustomField) IsAsanaCreated() bool {
+	return f.AsanaCreatedField != ""
 }
 
 type CustomFieldSetting struct {
