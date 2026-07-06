@@ -28,15 +28,14 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: '1.24.4'
-
+    # govulncheck-action sets up Go itself. govulncheck@latest tracks the latest
+    # Go release, so run the security scan on the current stable toolchain. The
+    # build/test job above still validates against the module's declared minimum
+    # Go version.
     - name: Run govulncheck
       uses: golang/govulncheck-action@v1
       with:
-        go-version-input: '1.24.4'
+        go-version-input: 'stable'
         go-package: './...'
 
     - name: Run gosec Security Scanner
