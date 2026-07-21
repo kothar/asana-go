@@ -2,7 +2,6 @@ package asana
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"time"
 )
@@ -86,7 +85,7 @@ func (t *Task) CreateAttachment(client *Client, request *NewAttachment) (*Attach
 	result := &Attachment{}
 	err := client.postMultipart(fmt.Sprintf("/tasks/%s/attachments", t.ID), result, "file", request.Reader, request.FileName, request.ContentType)
 	if err != nil {
-		return nil, errors.Wrap(err, "Upload attachment")
+		return nil, fmt.Errorf("Upload attachment: %w", err)
 	}
 	return result, nil
 }
@@ -105,7 +104,7 @@ func (t *Task) CreateExternalAttachment(client *Client, request *ExternalAttachm
 	result := &Attachment{}
 	err := client.post(fmt.Sprintf("/tasks/%s/attachments", t.ID), request, result)
 	if err != nil {
-		return nil, errors.Wrap(err, "Create external attachment")
+		return nil, fmt.Errorf("Create external attachment: %w", err)
 	}
 	return result, nil
 }
