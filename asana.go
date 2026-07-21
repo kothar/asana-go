@@ -87,7 +87,7 @@ func (c *Client) getURL(path string) string {
 func mergeQuery(q url.Values, request interface{}) error {
 	queryParams, err := query.Values(request)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal request to query parameters: %w", err)
+		return fmt.Errorf("unable to marshal request to query parameters: %w", err)
 	}
 
 	// Merge with defaults
@@ -116,7 +116,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 	q, err := query.Values(c.DefaultOptions)
 	if err != nil {
-		return nil, fmt.Errorf("%s Unable to marshal DefaultOptions to query parameters: %w", requestID, err)
+		return nil, fmt.Errorf("%s unable to marshal DefaultOptions to query parameters: %w", requestID, err)
 	}
 
 	// Encode data
@@ -156,7 +156,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 	request, err := http.NewRequest(http.MethodGet, c.getURL(path), nil)
 	if err != nil {
-		return nil, fmt.Errorf("%s Request error: %w", requestID, err)
+		return nil, fmt.Errorf("%s request error: %w", requestID, err)
 	}
 	c.addHeaders(request, options)
 	resp, err := c.HTTPClient.Do(request)
@@ -245,7 +245,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 	}
 	request, err := http.NewRequest(method, c.getURL(path), bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("Request error: %w", err)
+		return fmt.Errorf("request error: %w", err)
 	}
 
 	request.Header.Add("Content-Type", "application/json")
@@ -319,7 +319,7 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 		r,
 		bytes.NewReader(buffer.Bytes()[headerSize:])))
 	if err != nil {
-		return fmt.Errorf("%s Request error: %w", requestID, err)
+		return fmt.Errorf("%s request error: %w", requestID, err)
 	}
 
 	request.Header.Add("Content-Type", partWriter.FormDataContentType())
@@ -368,7 +368,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 
 	// Decode the data field
 	if value.Data == nil {
-		return nil, fmt.Errorf("%s Missing data from response", requestID)
+		return nil, fmt.Errorf("%s missing data from response", requestID)
 	}
 
 	return value, c.parseResponseData(value.Data, result, requestID)
@@ -380,7 +380,7 @@ func (c *Client) parseResponseData(data []byte, result interface{}, requestID xi
 	}
 
 	if err := json.Unmarshal(data, result); err != nil {
-		return fmt.Errorf("%s Unable to parse response data: %w", requestID, err)
+		return fmt.Errorf("%s unable to parse response data: %w", requestID, err)
 	}
 
 	return nil
