@@ -1,16 +1,15 @@
 package asana
 
 import (
+	"fmt"
 	"testing"
-
-	"github.com/pkg/errors"
 )
 
 func TestCauseWrappedError(t *testing.T) {
 	cause := &Error{StatusCode: 500}
 
-	wrap1 := errors.Wrap(cause, "Wrapping 1")
-	wrap2 := errors.Wrap(wrap1, "Wrapping 2")
+	wrap1 := fmt.Errorf("Wrapping 1: %w", cause)
+	wrap2 := fmt.Errorf("Wrapping 2: %w", wrap1)
 
 	if !IsRecoverableError(cause) {
 		t.Error("Expected original error to be recoverable")

@@ -1,12 +1,12 @@
 package asana
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -50,8 +50,8 @@ func (err Error) Error() string {
 }
 
 func IsAsanaError(err error) (*Error, bool) {
-	cause := errors.Cause(err)
-	if e, ok := cause.(*Error); ok {
+	var e *Error
+	if errors.As(err, &e) {
 		return e, true
 	}
 	return nil, false

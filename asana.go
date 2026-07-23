@@ -17,7 +17,6 @@ import (
 
 	"dario.cat/mergo"
 	"github.com/google/go-querystring/query"
-	"github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -88,7 +87,7 @@ func (c *Client) getURL(path string) string {
 func mergeQuery(q url.Values, request interface{}) error {
 	queryParams, err := query.Values(request)
 	if err != nil {
-		return errors.Wrap(err, "Unable to marshal request to query parameters")
+		return fmt.Errorf("unable to marshal request to query parameters: %w", err)
 	}
 
 	// Merge with defaults
@@ -108,7 +107,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	// Prepare options
 	options, err := c.mergeOptions(opts...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "%s unable to merge options", requestID)
+		return nil, fmt.Errorf("%s unable to merge options: %w", requestID, err)
 	}
 
 	// Encode default options
@@ -117,7 +116,7 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 	q, err := query.Values(c.DefaultOptions)
 	if err != nil {
-		return nil, errors.Wrapf(err, "%s Unable to marshal DefaultOptions to query parameters", requestID)
+		return nil, fmt.Errorf("%s unable to marshal DefaultOptions to query parameters: %w", requestID, err)
 	}
 
 	// Encode data
@@ -157,12 +156,12 @@ func (c *Client) get(path string, data, result interface{}, opts ...*Options) (*
 	}
 	request, err := http.NewRequest(http.MethodGet, c.getURL(path), nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "%s Request error", requestID)
+		return nil, fmt.Errorf("%s request error: %w", requestID, err)
 	}
 	c.addHeaders(request, options)
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return nil, errors.Wrapf(err, "%s GET error", requestID)
+		return nil, fmt.Errorf("%s GET error: %w", requestID, err)
 	}
 
 	// Parse the result
@@ -217,7 +216,7 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 	// Prepare options
 	options, err := c.mergeOptions(opts...)
 	if err != nil {
-		return errors.Wrapf(err, "%s unable to merge options", requestID)
+		return fmt.Errorf("%s unable to merge options: %w", requestID, err)
 	}
 
 	// Validate data
@@ -246,14 +245,14 @@ func (c *Client) do(method, path string, data, result interface{}, opts ...*Opti
 	}
 	request, err := http.NewRequest(method, c.getURL(path), bytes.NewReader(body))
 	if err != nil {
-		return errors.Wrap(err, "Request error")
+		return fmt.Errorf("request error: %w", err)
 	}
 
 	request.Header.Add("Content-Type", "application/json")
 	c.addHeaders(request, options)
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return errors.Wrapf(err, "%s error", method)
+		return fmt.Errorf("%s error: %w", method, err)
 	}
 
 	_, err = c.parseResponse(resp, result, requestID, options)
@@ -286,7 +285,7 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 	requestID := xid.New()
 	options, err := c.mergeOptions(opts...)
 	if err != nil {
-		return errors.Wrapf(err, "%s unable to merge options", requestID)
+		return fmt.Errorf("%s unable to merge options: %w", requestID, err)
 	}
 
 	if IsTrue(options.Debug) {
@@ -305,13 +304,13 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 
 	_, err = partWriter.CreatePart(h)
 	if err != nil {
-		return errors.Wrapf(err, "%s create multipart header", requestID)
+		return fmt.Errorf("%s create multipart header: %w", requestID, err)
 	}
 	headerSize := buffer.Len()
 
 	// Write footer
 	if err = partWriter.Close(); err != nil {
-		return errors.Wrapf(err, "%s create multipart footer", requestID)
+		return fmt.Errorf("%s create multipart footer: %w", requestID, err)
 	}
 
 	// Create request
@@ -320,14 +319,14 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 		r,
 		bytes.NewReader(buffer.Bytes()[headerSize:])))
 	if err != nil {
-		return errors.Wrapf(err, "%s Request error", requestID)
+		return fmt.Errorf("%s request error: %w", requestID, err)
 	}
 
 	request.Header.Add("Content-Type", partWriter.FormDataContentType())
 	c.addHeaders(request, options)
 	resp, err := c.HTTPClient.Do(request)
 	if err != nil {
-		return errors.Wrapf(err, "%s POST error", requestID)
+		return fmt.Errorf("%s POST error: %w", requestID, err)
 	}
 
 	_, err = c.parseResponse(resp, result, requestID, options)
@@ -369,7 +368,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 
 	// Decode the data field
 	if value.Data == nil {
-		return nil, errors.Errorf("%s Missing data from response", requestID)
+		return nil, fmt.Errorf("%s missing data from response", requestID)
 	}
 
 	return value, c.parseResponseData(value.Data, result, requestID)
@@ -381,7 +380,7 @@ func (c *Client) parseResponseData(data []byte, result interface{}, requestID xi
 	}
 
 	if err := json.Unmarshal(data, result); err != nil {
-		return errors.Wrapf(err, "%s Unable to parse response data", requestID)
+		return fmt.Errorf("%s unable to parse response data: %w", requestID, err)
 	}
 
 	return nil
