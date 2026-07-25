@@ -10,7 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Set up Go
       uses: actions/setup-go@v6
@@ -26,7 +26,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     # govulncheck-action sets up Go itself. govulncheck@latest tracks the latest
     # Go release, so run the security scan on the current stable toolchain. The
@@ -52,7 +52,7 @@ jobs:
   dependency-check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
