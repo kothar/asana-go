@@ -171,11 +171,18 @@ func fmtUserTaskList(client *asana.Client, taskList *asana.UserTaskList) {
 	}
 
 	fmt.Println("\nTasks:")
-	tasks, nextPage, err := taskList.Tasks(client)
-	check(err)
-	_ = nextPage
-	for _, task := range tasks {
-		fmt.Printf("  Task %s: %q\n", task.ID, task.Name)
+	nextPage := &asana.NextPage{}
+	for nextPage != nil {
+		page := &asana.Options{Limit: 100, Offset: nextPage.Offset}
+
+		var tasks []*asana.Task
+		var err error
+		tasks, nextPage, err = taskList.Tasks(client, page)
+		check(err)
+
+		for _, task := range tasks {
+			fmt.Printf("  Task %s: %q\n", task.ID, task.Name)
+		}
 	}
 }
 

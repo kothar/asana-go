@@ -30,11 +30,18 @@ func (u *UserTaskList) Fetch(client *Client, options ...*Options) error {
 // TaskList returns the user task list (My Tasks) for this user in the given
 // workspace
 func (u *User) TaskList(client *Client, workspace *Workspace, options ...*Options) (*UserTaskList, error) {
+	if workspace == nil || workspace.ID == "" {
+		return nil, fmt.Errorf("a workspace is required to load a user task list")
+	}
+
 	client.trace("Loading task list for user %q in workspace %q", u.ID, workspace.ID)
 
 	result := &UserTaskList{}
 
-	queryOptions := append([]*Options{{Workspace: workspace.ID}}, options...)
+	// The workspace is applied last: client.get merges options in order, so
+	// this ensures the request targets the requested workspace even if the
+	// caller supplied one of their own
+	queryOptions := append(append([]*Options{}, options...), &Options{Workspace: workspace.ID})
 	_, err := client.get(fmt.Sprintf("/users/%s/user_task_list", u.ID), nil, result, queryOptions...)
 	return result, err
 }

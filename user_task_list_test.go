@@ -80,6 +80,50 @@ func TestUser_TaskList(t *testing.T) {
 	}
 }
 
+func TestUser_TaskListOverridesCallerWorkspace(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://app.asana.com").
+		Get("/api/1.0/users/54321/user_task_list").
+		MatchParam("workspace", "31337").
+		Reply(200).
+		JSON(o{"data": o{
+			"gid":       "12345",
+			"workspace": o{"gid": "31337", "resource_type": "workspace", "name": "My Workspace"},
+		}})
+
+	user := &User{ID: "54321"}
+	workspace := &Workspace{ID: "31337"}
+
+	client := NewClient(http.DefaultClient)
+
+	// A workspace supplied through the options must not displace the one the
+	// caller selected explicitly
+	taskList, err := user.TaskList(client, workspace, &Options{Workspace: "99999"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if taskList.ID != "12345" {
+		t.Errorf("Expected user task list ID 12345 but saw %s", taskList.ID)
+	}
+}
+
+func TestUser_TaskListRequiresWorkspace(t *testing.T) {
+	defer gock.Off()
+
+	user := &User{ID: "54321"}
+	client := NewClient(http.DefaultClient)
+
+	if _, err := user.TaskList(client, nil); err == nil {
+		t.Error("Expected an error when no workspace is provided")
+	}
+
+	if _, err := user.TaskList(client, &Workspace{}); err == nil {
+		t.Error("Expected an error when the workspace has no ID")
+	}
+}
+
 func TestUserTaskList_Tasks(t *testing.T) {
 	defer gock.Off()
 
