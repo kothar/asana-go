@@ -1,9 +1,9 @@
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/kothar/asana-go"
+	"github.com/kothar/asana-go"
 )
 
 func ListWorkspaces(c *asana.Client) error {
