@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GO-2025-3488: Fixed unexpected memory consumption during token parsing vulnerability
 
 ### Added
+- Added `UserTaskList` support: fetch a user task list by ID, fetch a user's My Tasks
+  list for a workspace (`User.TaskList`), and list the tasks it contains
+  (`UserTaskList.Tasks`), plus a `--user-task-list` flag in the `asana` command line
+  tool (originally contributed in #5)
 - Added the read-only `asana_created_field` property to `CustomField`, along with an
   `IsAsanaCreated()` helper, so callers can detect fields that Asana creates and manages
   automatically (e.g. "Priority", "Status") and which cannot be created through the API

@@ -24,7 +24,7 @@ var options struct {
 	Workspace    []string `long:"workspace" short:"w" description:"Workspace to access"`
 	Project      []string `long:"project" short:"p" description:"Project to access"`
 	Task         []string `long:"task" short:"t" description:"Task to access"`
-	UserTaskList []string `long:"user_task_list" short:"u" description:"UserTaskList to access"`
+	UserTaskList []string `long:"user-task-list" short:"u" description:"User task list to access"`
 
 	Attach     string `long:"attach" description:"Attach a file to a task"`
 	AddSection string `long:"add-section" description:"Add a new section to a project"`
@@ -66,12 +66,13 @@ func main() {
 	client.DefaultOptions.Enable = []asana.Feature{asana.StringIDs, asana.NewSections, asana.NewTaskSubtypes, asana.ProjectPrivacySetting}
 
 	// Load a user task list object
-	for _, u := range options.UserTaskList {
-		taskList := &asana.UserTaskList{ID: u}
-		check(taskList.Fetch(client))
+	if options.UserTaskList != nil {
+		for _, u := range options.UserTaskList {
+			taskList := &asana.UserTaskList{ID: u}
+			check(taskList.Fetch(client))
 
-		fmt.Printf("  UserTaskList %s: %q (%s)\n", taskList.ID, taskList.Name, taskList.Owner.Name)
-
+			fmtUserTaskList(client, taskList)
+		}
 		return
 	}
 
@@ -158,6 +159,24 @@ func fmtProject(client *asana.Client, project *asana.Project) {
 	check(ListSections(client, project))
 	fmt.Println("\nTasks:")
 	check(ListTasks(client, project))
+}
+
+func fmtUserTaskList(client *asana.Client, taskList *asana.UserTaskList) {
+	fmt.Printf("User task list %s: %q\n", taskList.ID, taskList.Name)
+	if taskList.Owner != nil {
+		fmt.Printf("  Owner: %s (%s)\n", taskList.Owner.Name, taskList.Owner.ID)
+	}
+	if taskList.Workspace != nil {
+		fmt.Printf("  Workspace: %s (%s)\n", taskList.Workspace.Name, taskList.Workspace.ID)
+	}
+
+	fmt.Println("\nTasks:")
+	tasks, nextPage, err := taskList.Tasks(client)
+	check(err)
+	_ = nextPage
+	for _, task := range tasks {
+		fmt.Printf("  Task %s: %q\n", task.ID, task.Name)
+	}
 }
 
 func fmtTask(task *asana.Task, client *asana.Client) {
