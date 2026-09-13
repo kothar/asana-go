@@ -3,8 +3,10 @@ name: Go
 on:
   push:
     branches: [ develop, main ]
+  # No branch filter: this fires on every pull request whatever its base, so
+  # that stacked PRs (one review branch based on another) still get CI. With
+  # a filter here they are silently skipped rather than reported as pending.
   pull_request:
-    branches: [ develop, main ]
 
 # Least privilege by default. A job-level permissions block replaces this one
 # outright rather than merging with it, so any job needing more has to respell
