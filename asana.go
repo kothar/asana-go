@@ -182,7 +182,9 @@ func (c *Client) addHeaders(request *http.Request, options *Options) {
 	}
 
 	if IsTrue(options.Debug) {
-		request.Header.Write(os.Stderr)
+		// Debug logging only: a failed write to stderr is not worth
+		// reporting over the request itself
+		_ = request.Header.Write(os.Stderr)
 	}
 }
 
@@ -343,7 +345,9 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, requestI
 	}
 
 	if IsTrue(options.Debug) {
-		resp.Header.Write(os.Stderr)
+		// Debug logging only: a failed write to stderr is not worth
+		// reporting over the response itself
+		_ = resp.Header.Write(os.Stderr)
 		fmt.Fprintf(os.Stderr, "%s %s\n%s\n", requestID, resp.Status, body)
 	}
 

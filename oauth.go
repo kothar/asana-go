@@ -7,6 +7,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Asana's published OAuth endpoints. These are public URLs, not credentials.
+// #nosec G101 -- gosec matches on the TokenURL field name, not on a secret
 var defaultOAuthEndpoint = oauth2.Endpoint{
 	AuthURL:  "https://app.asana.com/-/oauth_authorize",
 	TokenURL: "https://app.asana.com/-/oauth_token",
