@@ -70,6 +70,10 @@ jobs:
       if: always()
       with:
         sarif_file: 'gosec-results.sarif'
+        # Distinct per tool: both jobs upload SARIF for the same commit and
+        # ref, and Code Scanning matches analyses by category. Without one
+        # the two uploads collide and whichever lands second fails.
+        category: gosec
 
   dependency-check:
     runs-on: ubuntu-latest
@@ -96,3 +100,7 @@ jobs:
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
+        # Distinct per tool: both jobs upload SARIF for the same commit and
+        # ref, and Code Scanning matches analyses by category. Without one
+        # the two uploads collide and whichever lands second fails.
+        category: trivy
