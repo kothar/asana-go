@@ -21,9 +21,10 @@ var (
 var options struct {
 	Token string `long:"token" description:"Personal Access Token used to authorize access to the API" env:"ASANA_TOKEN" required:"true"`
 
-	Workspace []string `long:"workspace" short:"w" description:"Workspace to access"`
-	Project   []string `long:"project" short:"p" description:"Project to access"`
-	Task      []string `long:"task" short:"t" description:"Task to access"`
+	Workspace    []string `long:"workspace" short:"w" description:"Workspace to access"`
+	Project      []string `long:"project" short:"p" description:"Project to access"`
+	Task         []string `long:"task" short:"t" description:"Task to access"`
+	UserTaskList []string `long:"user-task-list" short:"u" description:"User task list to access"`
 
 	Attach     string `long:"attach" description:"Attach a file to a task"`
 	AddSection string `long:"add-section" description:"Add a new section to a project"`
@@ -63,6 +64,17 @@ func main() {
 	}
 	client.Verbose = options.Verbose
 	client.DefaultOptions.Enable = []asana.Feature{asana.StringIDs, asana.NewSections, asana.NewTaskSubtypes, asana.ProjectPrivacySetting}
+
+	// Load a user task list object
+	if options.UserTaskList != nil {
+		for _, u := range options.UserTaskList {
+			taskList := &asana.UserTaskList{ID: u}
+			check(taskList.Fetch(client))
+
+			fmtUserTaskList(client, taskList)
+		}
+		return
+	}
 
 	// Load a task object
 	if options.Task == nil {
@@ -147,6 +159,31 @@ func fmtProject(client *asana.Client, project *asana.Project) {
 	check(ListSections(client, project))
 	fmt.Println("\nTasks:")
 	check(ListTasks(client, project))
+}
+
+func fmtUserTaskList(client *asana.Client, taskList *asana.UserTaskList) {
+	fmt.Printf("User task list %s: %q\n", taskList.ID, taskList.Name)
+	if taskList.Owner != nil {
+		fmt.Printf("  Owner: %s (%s)\n", taskList.Owner.Name, taskList.Owner.ID)
+	}
+	if taskList.Workspace != nil {
+		fmt.Printf("  Workspace: %s (%s)\n", taskList.Workspace.Name, taskList.Workspace.ID)
+	}
+
+	fmt.Println("\nTasks:")
+	nextPage := &asana.NextPage{}
+	for nextPage != nil {
+		page := &asana.Options{Limit: 100, Offset: nextPage.Offset}
+
+		var tasks []*asana.Task
+		var err error
+		tasks, nextPage, err = taskList.Tasks(client, page)
+		check(err)
+
+		for _, task := range tasks {
+			fmt.Printf("  Task %s: %q\n", task.ID, task.Name)
+		}
+	}
 }
 
 func fmtTask(task *asana.Task, client *asana.Client) {
