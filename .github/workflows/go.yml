@@ -6,16 +6,29 @@ on:
   pull_request:
     branches: [ develop, main ]
 
+# Least privilege by default. A job-level permissions block replaces this one
+# outright rather than merging with it, so any job needing more has to respell
+# contents: read alongside what it adds.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
+      with:
+        # Don't leave the job's token in .git/config where any later step,
+        # including the third-party actions below, could read it.
+        persist-credentials: false
 
+    # Track the latest patch of the module's declared minimum Go line (go.mod
+    # says go 1.26.0). Pinning an exact patch would leave the build on a
+    # toolchain with known stdlib vulnerabilities as new patches are released.
     - name: Set up Go
       uses: actions/setup-go@v6
       with:
-        go-version: '1.24.4'
+        go-version: '1.26.x'
 
     - name: Build
       run: go build -v ./...
@@ -25,8 +38,15 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # uploads SARIF to the Security tab
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
+      with:
+        # Don't leave the job's token in .git/config where any later step,
+        # including the third-party actions below, could read it.
+        persist-credentials: false
 
     # govulncheck-action sets up Go itself. govulncheck@latest tracks the latest
     # Go release, so run the security scan on the current stable toolchain. The
@@ -51,8 +71,15 @@ jobs:
 
   dependency-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # uploads SARIF to the Security tab
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
+      with:
+        # Don't leave the job's token in .git/config where any later step,
+        # including the third-party actions below, could read it.
+        persist-credentials: false
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
