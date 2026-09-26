@@ -72,6 +72,12 @@ func (w *Workspace) WorkspaceMemberships(client *Client, options ...*Options) ([
 // user in this workspace, or nil if the user is not a member. The special
 // user ID "me" refers to the authorized user.
 func (w *Workspace) MembershipFor(client *Client, userID string, options ...*Options) (*WorkspaceMembership, error) {
+	// Without a user filter the endpoint lists every membership in the
+	// workspace, and the first would belong to someone else
+	if userID == "" {
+		return nil, fmt.Errorf("a user ID is required to look up a workspace membership")
+	}
+
 	client.trace("Loading workspace membership for user %q in workspace %q", userID, w.ID)
 	var result []*WorkspaceMembership
 

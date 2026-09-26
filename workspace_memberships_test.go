@@ -85,3 +85,20 @@ func TestUser_WorkspaceMemberships(t *testing.T) {
 		t.Errorf("Expected 2 memberships but found %d", len(memberships))
 	}
 }
+
+func TestWorkspace_MembershipFor_RequiresUser(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://app.asana.com").
+		Get("/api/1.0/workspaces/1234/workspace_memberships").
+		Reply(200).
+		JSON(o{"data": []o{{"gid": "5678"}}})
+
+	client := NewClient(http.DefaultClient)
+	workspace := &Workspace{ID: "1234"}
+	if _, err := workspace.MembershipFor(client, ""); err == nil {
+		t.Fatal("Expected an error for an empty user ID")
+	}
+	if gock.IsDone() {
+		t.Error("Expected no request to be made")
+	}
+}
