@@ -96,3 +96,23 @@ func TestRetryTransportConnectionReset(t *testing.T) {
 		t.Errorf("expected 1 attempt, got %d", len(requests))
 	}
 }
+
+func TestRetryable(t *testing.T) {
+	cases := []struct {
+		method string
+		status int
+		want   bool
+	}{
+		{http.MethodPost, http.StatusTooManyRequests, true},
+		{http.MethodPost, http.StatusServiceUnavailable, false},
+		{http.MethodGet, http.StatusServiceUnavailable, true},
+		{http.MethodPut, http.StatusServiceUnavailable, true},
+		{http.MethodGet, http.StatusInternalServerError, false},
+		{http.MethodGet, http.StatusOK, false},
+	}
+	for _, c := range cases {
+		if got := retryable(c.method, c.status); got != c.want {
+			t.Errorf("retryable(%s, %d) = %v, want %v", c.method, c.status, got, c.want)
+		}
+	}
+}

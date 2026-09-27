@@ -166,7 +166,7 @@ func (r *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 				return resp, err
 			}
 			log.Printf("%s %s failed, retrying: %v", req.Method, req.URL.Path, err)
-		} else if resp.StatusCode != http.StatusTooManyRequests && resp.StatusCode != http.StatusServiceUnavailable {
+		} else if !retryable(req.Method, resp.StatusCode) {
 			return resp, nil
 		}
 
@@ -195,6 +195,20 @@ func (r *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		req = next
 	}
+}
+
+// retryable reports whether a response means the request can safely be sent
+// again. A 429 means Asana refused the request, so even a POST can be retried.
+// A 503 may come from a proxy after Asana acted on the request, so only
+// idempotent requests are retried.
+func retryable(method string, status int) bool {
+	switch status {
+	case http.StatusTooManyRequests:
+		return true
+	case http.StatusServiceUnavailable:
+		return idempotent(method)
+	}
+	return false
 }
 
 // idempotent reports whether repeating a request with this method has the
