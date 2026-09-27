@@ -41,8 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`UserTaskList.Tasks`), plus a `--user-task-list` flag in the `asana` command line
   tool (originally contributed in #5)
 - Added the read-only `asana_created_field` property to `CustomField`, along with an
-  `IsAsanaCreated()` helper, so callers can detect fields that come from an Asana
-  template
+  `IsAsanaCreated()` helper
 - Added comprehensive security scanning to CI/CD pipeline:
   - `govulncheck` for Go vulnerability scanning
   - Trivy for dependency and container vulnerability scanning
