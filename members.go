@@ -42,10 +42,10 @@ type ProjectMembership struct {
 
 type membershipsRequestParams struct {
 	// Globally unique identifier for goal, project, or portfolio
-	Parent string `json:"parent"`
+	Parent string `url:"parent"`
 
 	// Optional - Globally unique identifier for team or user.
-	Member string `json:"member,omitempty"`
+	Member string `url:"member,omitempty"`
 }
 
 func (p *Project) Memberships(client *Client, options ...*Options) ([]*ProjectMembership, *NextPage, error) {

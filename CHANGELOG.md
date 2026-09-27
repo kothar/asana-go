@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added security-focused GitHub Actions workflow
 
 ### Fixed
+- `Project.Memberships` never sent the project as the `parent` query parameter, so Asana
+  rejected every call with 400
 - `Project.InsertSection` panicked on every call because its API path lacked a leading slash
 
 ### Changed
