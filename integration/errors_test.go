@@ -22,9 +22,7 @@ func TestMissingTask(t *testing.T) {
 	f := setup(t)
 	p := f.newProject(t, "project")
 	task := f.newTask(t, &asana.CreateTaskRequest{Projects: []string{p.ID}})
-	if err := task.Delete(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, task.Delete(f.client))
 
 	err := task.Update(f.client, &asana.UpdateTaskRequest{TaskBase: asana.TaskBase{Notes: "gone"}})
 	if !asana.IsNotFoundError(err) {

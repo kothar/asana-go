@@ -16,10 +16,7 @@ func TestComments(t *testing.T) {
 	p := f.newProject(t, "project")
 	task := f.newTask(t, &asana.CreateTaskRequest{Projects: []string{p.ID}})
 
-	comment, err := task.CreateComment(f.client, &asana.StoryBase{Text: "First comment"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	comment := mustReturn(task.CreateComment(f.client, &asana.StoryBase{Text: "First comment"}))(t)
 	if comment.ResourceSubtype != "comment_added" || comment.Text != "First comment" {
 		t.Errorf("expected a comment_added story with the text, got %q %q", comment.ResourceSubtype, comment.Text)
 	}
@@ -27,29 +24,18 @@ func TestComments(t *testing.T) {
 		t.Errorf("expected the comment to be created by %s, got %+v", f.me.ID, comment.CreatedBy)
 	}
 
-	stories, _, err := task.Stories(f.client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	stories := mustPage(task.Stories(f.client))(t)
 	if !contains(stories, comment.ID) {
 		t.Error("expected the task's stories to include the comment")
 	}
 
-	updated, err := comment.UpdateStory(f.client, &asana.StoryBase{Text: "Edited comment"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	updated := mustReturn(comment.UpdateStory(f.client, &asana.StoryBase{Text: "Edited comment"}))(t)
 	if updated.Text != "Edited comment" {
 		t.Errorf("expected the edited text, got %q", updated.Text)
 	}
 
-	if err := comment.Delete(f.client); err != nil {
-		t.Fatal(err)
-	}
-	stories, _, err = task.Stories(f.client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	must(t, comment.Delete(f.client))
+	stories = mustPage(task.Stories(f.client))(t)
 	if contains(stories, comment.ID) {
 		t.Error("expected the deleted comment to be gone")
 	}
@@ -58,19 +44,14 @@ func TestComments(t *testing.T) {
 func TestTags(t *testing.T) {
 	f := setup(t)
 
-	tag, err := f.workspace.CreateTag(f.client, &asana.TagBase{
+	tag := mustReturn(f.workspace.CreateTag(f.client, &asana.TagBase{
 		Name:  f.name(t, "tag"),
 		Notes: "Created by the asana-go integration tests",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	}))(t)
 	cleanup(t, "tag "+tag.ID, func() error { return tag.Delete(f.client) })
 
 	fetched := &asana.Tag{ID: tag.ID}
-	if err := fetched.Fetch(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, fetched.Fetch(f.client))
 	if fetched.Name != tag.Name {
 		t.Errorf("expected tag name %q, got %q", tag.Name, fetched.Name)
 	}
@@ -78,10 +59,7 @@ func TestTags(t *testing.T) {
 		t.Errorf("expected the tag to be in workspace %s, got %+v", f.workspace.ID, fetched.Workspace)
 	}
 
-	tags, err := f.workspace.AllTags(f.client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	tags := mustReturn(f.workspace.AllTags(f.client))(t)
 	if !contains(tags, tag.ID) {
 		t.Error("expected AllTags to include the tag")
 	}
@@ -92,16 +70,12 @@ func TestTags(t *testing.T) {
 		Tags:     []string{tag.ID},
 	})
 	fetchedTask := &asana.Task{ID: task.ID}
-	if err := fetchedTask.Fetch(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, fetchedTask.Fetch(f.client))
 	if !contains(fetchedTask.Tags, tag.ID) {
 		t.Error("expected the task to carry the tag")
 	}
 
-	if err := tag.Delete(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, tag.Delete(f.client))
 	if err := fetched.Fetch(f.client); !asana.IsNotFoundError(err) {
 		t.Errorf("expected a not found error fetching a deleted tag, got %v", err)
 	}
@@ -113,33 +87,24 @@ func TestAttachments(t *testing.T) {
 	task := f.newTask(t, &asana.CreateTaskRequest{Projects: []string{p.ID}})
 
 	const content = "Uploaded by the asana-go integration tests\n"
-	uploaded, err := task.CreateAttachment(f.client, &asana.NewAttachment{
+	uploaded := mustReturn(task.CreateAttachment(f.client, &asana.NewAttachment{
 		Reader:      io.NopCloser(strings.NewReader(content)),
 		FileName:    "upload.txt",
 		ContentType: "text/plain",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	}))(t)
 	if uploaded.ID == "" || uploaded.Name != "upload.txt" {
 		t.Errorf("expected an attachment named upload.txt, got %+v", uploaded)
 	}
 
-	external, err := task.CreateExternalAttachment(f.client, &asana.ExternalAttachmentRequest{
+	external := mustReturn(task.CreateExternalAttachment(f.client, &asana.ExternalAttachmentRequest{
 		Name: "Example link",
 		URL:  "https://example.com/",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	}))(t)
 	if external.ResourceSubtype != "external" {
 		t.Errorf("expected an external attachment, got %q", external.ResourceSubtype)
 	}
 
-	attachments, _, err := task.Attachments(f.client, asana.Fields(asana.Attachment{}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	attachments := mustPage(task.Attachments(f.client, asana.Fields(asana.Attachment{})))(t)
 	if !contains(attachments, external.ID) {
 		t.Error("expected the task's attachments to include the external link")
 	}
@@ -153,19 +118,10 @@ func TestAttachments(t *testing.T) {
 	if url == "" {
 		t.Fatal("expected the upload to have a download URL")
 	}
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	req := mustReturn(http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil))(t)
+	resp := mustReturn((&http.Client{Timeout: 30 * time.Second}).Do(req))(t)
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	body := mustReturn(io.ReadAll(resp.Body))(t)
 	if string(body) != content {
 		t.Errorf("expected the downloaded attachment to match the upload, got %q", body)
 	}

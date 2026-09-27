@@ -3,6 +3,7 @@ package integration
 // These tests check the suite's own plumbing and run without credentials
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kothar/asana-go"
 	"github.com/rs/xid"
 )
 
@@ -28,10 +30,7 @@ func TestRetryTransport(t *testing.T) {
 	defer server.Close()
 
 	client := &http.Client{Transport: &retryTransport{base: http.DefaultTransport}}
-	resp, err := client.Post(server.URL, "text/plain", strings.NewReader("payload"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	resp := mustReturn(client.Post(server.URL, "text/plain", strings.NewReader("payload")))(t)
 	_ = resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
@@ -113,6 +112,42 @@ func TestRetryable(t *testing.T) {
 	for _, c := range cases {
 		if got := retryable(c.method, c.status); got != c.want {
 			t.Errorf("retryable(%s, %d) = %v, want %v", c.method, c.status, got, c.want)
+		}
+	}
+}
+
+// fatalRecorder stands in for a test so the must helpers can be checked
+// without failing the real one
+type fatalRecorder struct {
+	testing.TB
+	fatal []any
+}
+
+func (r *fatalRecorder) Helper() {}
+
+func (r *fatalRecorder) Fatal(args ...any) { r.fatal = args }
+
+func TestMust(t *testing.T) {
+	boom := errors.New("boom")
+
+	r := &fatalRecorder{}
+	if got := mustReturn("value", nil)(r); got != "value" || r.fatal != nil {
+		t.Errorf("expected mustReturn to pass the value through, got %q and %v", got, r.fatal)
+	}
+	r = &fatalRecorder{}
+	if got := mustPage("page", &asana.NextPage{}, nil)(r); got != "page" || r.fatal != nil {
+		t.Errorf("expected mustPage to pass the page through, got %q and %v", got, r.fatal)
+	}
+
+	for name, fail := range map[string]func(testing.TB){
+		"must":       func(t testing.TB) { must(t, boom) },
+		"mustReturn": func(t testing.TB) { mustReturn("value", boom)(t) },
+		"mustPage":   func(t testing.TB) { mustPage("page", &asana.NextPage{}, boom)(t) },
+	} {
+		r := &fatalRecorder{}
+		fail(r)
+		if len(r.fatal) != 1 || r.fatal[0] != boom {
+			t.Errorf("expected %s to stop the test with the error, got %v", name, r.fatal)
 		}
 	}
 }

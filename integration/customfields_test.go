@@ -44,9 +44,7 @@ func TestCustomFieldValues(t *testing.T) {
 	high := enum.EnumOptions[1]
 
 	fetched := &asana.CustomField{ID: text.ID}
-	if err := fetched.Fetch(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, fetched.Fetch(f.client))
 	if fetched.Name != text.Name || fetched.ResourceSubtype != asana.FieldTypeText {
 		t.Errorf("expected text field %q, got %q of type %q", text.Name, fetched.Name, fetched.ResourceSubtype)
 	}
@@ -54,39 +52,29 @@ func TestCustomFieldValues(t *testing.T) {
 		t.Error("expected a user-created field not to be reported as Asana-created")
 	}
 
-	fields, err := f.workspace.AllCustomFields(f.client)
-	if err != nil {
-		t.Fatal(err)
-	}
+	fields := mustReturn(f.workspace.AllCustomFields(f.client))(t)
 	if !contains(fields, text.ID) || !contains(fields, enum.ID) {
 		t.Error("expected AllCustomFields to include both fields")
 	}
 
 	p := f.newProject(t, "project")
 	for _, field := range []*asana.CustomField{text, enum} {
-		setting, err := p.AddCustomFieldSetting(f.client, &asana.AddCustomFieldSettingRequest{CustomField: field.ID})
-		if err != nil {
-			t.Fatal(err)
-		}
+		setting := mustReturn(p.AddCustomFieldSetting(f.client, &asana.AddCustomFieldSettingRequest{CustomField: field.ID}))(t)
 		if setting.CustomField == nil || setting.CustomField.ID != field.ID {
 			t.Errorf("expected a setting for field %s, got %+v", field.ID, setting.CustomField)
 		}
 	}
 
 	task := f.newTask(t, &asana.CreateTaskRequest{Projects: []string{p.ID}})
-	if err := task.Update(f.client, &asana.UpdateTaskRequest{
+	must(t, task.Update(f.client, &asana.UpdateTaskRequest{
 		CustomFields: map[string]interface{}{
 			text.ID: "Some text",
 			enum.ID: high.ID,
 		},
-	}); err != nil {
-		t.Fatal(err)
-	}
+	}))
 
 	fetchedTask := &asana.Task{ID: task.ID}
-	if err := fetchedTask.Fetch(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, fetchedTask.Fetch(f.client))
 	values := map[string]*asana.CustomFieldValue{}
 	for _, value := range fetchedTask.CustomFields {
 		values[value.ID] = value
@@ -98,13 +86,9 @@ func TestCustomFieldValues(t *testing.T) {
 		t.Errorf("expected the enum field to hold option %s, got %+v", high.ID, v)
 	}
 
-	if err := p.RemoveCustomFieldSetting(f.client, text.ID); err != nil {
-		t.Fatal(err)
-	}
+	must(t, p.RemoveCustomFieldSetting(f.client, text.ID))
 	fetchedProject := &asana.Project{ID: p.ID}
-	if err := fetchedProject.Fetch(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, fetchedProject.Fetch(f.client))
 	if contains(settingFields(fetchedProject.CustomFieldSettings), text.ID) {
 		t.Error("expected the text field to be removed from the project")
 	}
@@ -112,9 +96,7 @@ func TestCustomFieldValues(t *testing.T) {
 		t.Error("expected the enum field to stay on the project")
 	}
 
-	if err := text.Delete(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, text.Delete(f.client))
 	if err := fetched.Fetch(f.client); !asana.IsNotFoundError(err) {
 		t.Errorf("expected a not found error fetching a deleted custom field, got %v", err)
 	}
@@ -134,9 +116,7 @@ func TestProjectLocalCustomField(t *testing.T) {
 		},
 	})
 	skipIfPremiumOnly(t, err)
-	if err != nil {
-		t.Fatal(err)
-	}
+	must(t, err)
 	if setting.CustomField == nil || setting.CustomField.ID == "" {
 		t.Fatalf("expected the setting to carry the new field, got %+v", setting.CustomField)
 	}
@@ -152,9 +132,7 @@ func TestProjectLocalCustomField(t *testing.T) {
 		CustomFields: map[string]interface{}{field.ID: 12.5},
 	})
 	fetched := &asana.Task{ID: task.ID}
-	if err := fetched.Fetch(f.client); err != nil {
-		t.Fatal(err)
-	}
+	must(t, fetched.Fetch(f.client))
 	i := indexOf(fetched.CustomFields, field.ID)
 	if i < 0 {
 		t.Fatal("expected the task to carry the project-local field")
