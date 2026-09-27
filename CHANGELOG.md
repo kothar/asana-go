@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added `Project.Delete`, `Tag.Delete` and `CustomField.Delete`
+- Added `GetID()` to every Asana object with a gid, and an `Identifiable` interface
+  that they all satisfy
+- Added an integration test suite in `integration/` that runs against a scratch Asana
+  workspace when `ASANA_TEST_PAT` and `ASANA_TEST_WORKSPACE` are set, and skips otherwise.
+  CI runs it in the `integration` job
+
+### Fixed
+- `Project.Memberships` never sent the project as the `parent` query parameter, so Asana
+  rejected every call with 400
+- `Project.InsertSection` panicked on every call because its API path lacked a leading slash
+
+## [0.1.0] - 2026-09-13
+
 ### Security
 - **CRITICAL**: Updated Go to version 1.24.4 to address multiple standard library vulnerabilities:
   - GO-2025-3751: Fixed sensitive headers not cleared on cross-origin redirect in net/http
@@ -16,12 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GO-2025-3488: Fixed unexpected memory consumption during token parsing vulnerability
 
 ### Added
-- Added `Project.Delete`, `Tag.Delete` and `CustomField.Delete`
-- Added `GetID()` to every Asana object with a gid, and an `Identifiable` interface
-  that they all satisfy
-- Added an integration test suite in `integration/` that runs against a scratch Asana
-  workspace when `ASANA_TEST_PAT` and `ASANA_TEST_WORKSPACE` are set, and skips otherwise.
-  CI runs it in the `integration` job
 - Added `UserTaskList` support: fetch a user task list by ID, fetch a user's My Tasks
   list for a workspace (`User.TaskList`), and list the tasks it contains
   (`UserTaskList.Tasks`), plus a `--user-task-list` flag in the `asana` command line
@@ -37,11 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Dependabot configuration for automated dependency updates
 - Added security-focused GitHub Actions workflow
 
-### Fixed
-- `Project.Memberships` never sent the project as the `parent` query parameter, so Asana
-  rejected every call with 400
-- `Project.InsertSection` panicked on every call because its API path lacked a leading slash
-
 ### Changed
 - Enhanced GitHub Actions workflow with multiple security jobs
 - Updated GitHub Actions to use latest versions (checkout@v4, setup-go@v5)
@@ -52,17 +56,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configured Dependabot for weekly dependency updates
 - Enhanced CI/CD pipeline with parallel security checks
 
-## Security Notice
+### Security Notice
 
 This release addresses critical security vulnerabilities in the Go standard library and OAuth2 dependency. Users are strongly encouraged to update immediately.
 
-### Upgrade Instructions
+#### Upgrade Instructions
 
 1. Update your Go installation to 1.24.4 or later
 2. Run `go get -u github.com/kothar/asana-go` to get the latest version
 3. Run `go mod tidy` to ensure dependencies are updated
 4. Test your application thoroughly after updating
 
-### Breaking Changes
+#### Breaking Changes
 
 None. All changes are backward compatible.
+
+[Unreleased]: https://github.com/kothar/asana-go/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/kothar/asana-go/releases/tag/v0.1.0
