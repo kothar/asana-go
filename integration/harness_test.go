@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -59,10 +60,9 @@ func TestRunTime(t *testing.T) {
 }
 
 func TestRetryTransportConnectionReset(t *testing.T) {
-	var requests []string
+	var requests atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests = append(requests, r.Method)
-		if len(requests) == 1 {
+		if requests.Add(1) == 1 {
 			// Drop the connection without answering, as a reset would
 			conn, _, err := w.(http.Hijacker).Hijack()
 			if err != nil {
@@ -82,17 +82,44 @@ func TestRetryTransportConnectionReset(t *testing.T) {
 		t.Fatalf("expected the GET to be retried, got %v", err)
 	}
 	_ = resp.Body.Close()
-	if len(requests) != 2 {
-		t.Errorf("expected 2 attempts, got %d", len(requests))
+	if n := requests.Load(); n != 2 {
+		t.Errorf("expected 2 attempts, got %d", n)
 	}
 
 	// A POST is not retried, since it may already have taken effect
-	requests = nil
+	requests.Store(0)
 	if _, err := client.Post(server.URL, "text/plain", strings.NewReader("payload")); err == nil {
 		t.Error("expected the POST to fail without a retry")
 	}
-	if len(requests) != 1 {
-		t.Errorf("expected 1 attempt, got %d", len(requests))
+	if n := requests.Load(); n != 1 {
+		t.Errorf("expected 1 attempt, got %d", n)
+	}
+}
+
+func TestRetryTransportHungRequest(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if requests.Add(1) == 1 {
+			// Never answer, until the client gives up on the request
+			<-r.Context().Done()
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	base := http.DefaultTransport.(*http.Transport).Clone()
+	base.ResponseHeaderTimeout = 100 * time.Millisecond
+	client := &http.Client{Transport: &retryTransport{base: base}}
+
+	req := mustReturn(http.NewRequest(http.MethodDelete, server.URL, nil))(t)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("expected the hung DELETE to be retried, got %v", err)
+	}
+	_ = resp.Body.Close()
+	if n := requests.Load(); n != 2 {
+		t.Errorf("expected 2 attempts, got %d", n)
 	}
 }
 
