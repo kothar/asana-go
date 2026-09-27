@@ -2,7 +2,10 @@ package asana
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
+
+	"github.com/h2non/gock"
 )
 
 func TestCustomFieldBase_Precision_ParseZero(t *testing.T) {
@@ -100,4 +103,22 @@ func TestCustomField_AsanaCreatedField_RequestedInFields(t *testing.T) {
 		}
 	}
 	t.Errorf("Expected Fields(CustomField{}) to include %q, got %v", "asana_created_field", options.Fields)
+}
+
+func TestCustomField_Delete(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://app.asana.com").
+		Delete("/api/1.0/custom_fields/1234").
+		Reply(200).
+		JSON(map[string]any{"data": map[string]any{}})
+
+	client := NewClient(http.DefaultClient)
+	field := &CustomField{ID: "1234"}
+	if err := field.Delete(client); err != nil {
+		t.Fatal(err)
+	}
+	if !gock.IsDone() {
+		t.Error("Expected DELETE request to be made")
+	}
 }
