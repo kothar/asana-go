@@ -127,22 +127,33 @@ func newFixture(token, workspaceID, teamID string) (*fixture, error) {
 	return f, nil
 }
 
+// responseTimeout bounds how long one attempt waits for Asana to start
+// answering. A request that hangs then fails on its own and can be retried,
+// rather than using up the deadline for every attempt.
+const responseTimeout = 20 * time.Second
+
 // newClient builds a client that authenticates with the token and waits out
 // rate limits, so that a burst of test requests doesn't fail the run
 func newClient(token string) *asana.Client {
+	base := http.DefaultTransport.(*http.Transport).Clone()
+	base.ResponseHeaderTimeout = responseTimeout
+
 	return asana.NewClient(&http.Client{
-		Timeout: time.Minute,
+		// The client's deadline covers every attempt, so it leaves room for
+		// retryTransport to try a hung request again
+		Timeout: 3 * time.Minute,
 		Transport: &oauth2.Transport{
 			Source: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}),
-			Base:   &retryTransport{base: http.DefaultTransport},
+			Base:   &retryTransport{base: base},
 		},
 	})
 }
 
 // retryTransport retries requests that Asana rejects as rate limited or
 // temporarily unavailable, honouring the Retry-After header. It also retries
-// idempotent requests whose connection fails, such as by being reset: a test
-// run makes enough requests that such network blips come up now and then.
+// idempotent requests whose connection fails, such as by being reset, or that
+// get no response in time: a test run makes enough requests that such network
+// blips come up now and then.
 type retryTransport struct {
 	base http.RoundTripper
 }
