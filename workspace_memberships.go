@@ -36,6 +36,10 @@ type WorkspaceMembership struct {
 	IsViewOnly *bool `json:"is_view_only,omitempty"`
 }
 
+func (m *WorkspaceMembership) GetID() string {
+	return m.ID
+}
+
 type workspaceMembershipQuery struct {
 	User string `url:"user,omitempty"`
 }
