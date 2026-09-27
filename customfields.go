@@ -133,9 +133,10 @@ type CustomField struct {
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// Read-only. Conditional. A unique identifier that associates this field
-	// with the Asana template it came from, such as "priority" or "status". It
-	// is empty for fields created by users. The value is only returned in
-	// responses, so it cannot be set when creating or updating a field.
+	// with the Asana template it came from, such as "deal_size". It is empty
+	// when the field is not associated with a template. The value is only
+	// returned in responses, so it cannot be set when creating or updating a
+	// field.
 	AsanaCreatedField string `json:"asana_created_field,omitempty"`
 }
 
@@ -144,7 +145,7 @@ func (f *CustomField) GetID() string {
 }
 
 // IsAsanaCreated reports whether this custom field is associated with an Asana
-// template, such as the built-in "Priority" and "Status" fields.
+// template
 func (f *CustomField) IsAsanaCreated() bool {
 	return f.AsanaCreatedField != ""
 }

@@ -56,16 +56,16 @@ func TestCustomField_AsanaCreatedField_Parse(t *testing.T) {
 	if err := json.Unmarshal([]byte(`
 {
 	"gid": "123",
-	"name": "Priority",
-	"resource_subtype": "enum",
-	"asana_created_field": "priority"
+	"name": "Deal size",
+	"resource_subtype": "number",
+	"asana_created_field": "deal_size"
 }
 `), cf); err != nil {
 		t.Fatal(err)
 	}
 
-	if cf.AsanaCreatedField != "priority" {
-		t.Errorf("Expected AsanaCreatedField to be %q, but saw %q", "priority", cf.AsanaCreatedField)
+	if cf.AsanaCreatedField != "deal_size" {
+		t.Errorf("Expected AsanaCreatedField to be %q, but saw %q", "deal_size", cf.AsanaCreatedField)
 	}
 	if !cf.IsAsanaCreated() {
 		t.Errorf("Expected IsAsanaCreated to be true for an Asana-created field")

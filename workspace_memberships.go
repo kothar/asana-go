@@ -82,7 +82,8 @@ func (w *Workspace) MembershipFor(client *Client, userID string, options ...*Opt
 	var result []*WorkspaceMembership
 
 	query := &workspaceMembershipQuery{User: userID}
-	allOptions := append([]*Options{Fields(WorkspaceMembership{})}, options...)
+	// Caller options go first, as only the first option sets headers and debug
+	allOptions := append(append([]*Options{}, options...), Fields(WorkspaceMembership{}))
 	if _, err := client.get(fmt.Sprintf("/workspaces/%s/workspace_memberships", w.ID), query, &result, allOptions...); err != nil {
 		return nil, err
 	}
