@@ -82,7 +82,7 @@ type SectionInsertRequest struct {
 func (p *Project) InsertSection(client *Client, request *SectionInsertRequest) error {
 	client.info("Moving section %s", request.Section)
 
-	err := client.post(fmt.Sprintf("projects/%s/sections/insert", p.ID), request, nil)
+	err := client.post(fmt.Sprintf("/projects/%s/sections/insert", p.ID), request, nil)
 	return err
 }
 

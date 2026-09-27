@@ -307,6 +307,14 @@ func (f *CustomField) Fetch(client *Client, options ...*Options) error {
 	return err
 }
 
+// Delete removes this custom field from the workspace. Locked custom fields
+// can only be deleted by the user who locked them.
+func (f *CustomField) Delete(client *Client) error {
+	client.info("Deleting custom field %q", f.Name)
+
+	return client.delete(fmt.Sprintf("/custom_fields/%s", f.ID))
+}
+
 // CustomFields returns the compact records for all custom fields in the workspace
 func (w *Workspace) CustomFields(client *Client, options ...*Options) ([]*CustomField, *NextPage, error) {
 	client.trace("Listing custom fields in workspace %s...\n", w.ID)

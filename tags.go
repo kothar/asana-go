@@ -57,6 +57,13 @@ func (t *Tag) Fetch(client *Client, options ...*Options) error {
 	return err
 }
 
+// Delete removes this tag from the workspace
+func (t *Tag) Delete(client *Client) error {
+	client.info("Deleting tag %q", t.Name)
+
+	return client.delete(fmt.Sprintf("/tags/%s", t.ID))
+}
+
 // Tags returns a list of tags in this workspace
 func (w *Workspace) Tags(client *Client, options ...*Options) ([]*Tag, *NextPage, error) {
 	client.trace("Listing tags in %q", w.Name)

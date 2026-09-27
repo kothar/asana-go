@@ -203,6 +203,14 @@ func (p *Project) Update(client *Client, request *UpdateProjectRequest, opts ...
 	return err
 }
 
+// Delete removes this project. Tasks that belong only to this project are
+// deleted with it.
+func (p *Project) Delete(client *Client) error {
+	client.info("Deleting project %q", p.Name)
+
+	return client.delete(fmt.Sprintf("/projects/%s", p.ID))
+}
+
 // Projects returns a list of projects in this workspace
 func (w *Workspace) Projects(client *Client, options ...*Options) ([]*Project, *NextPage, error) {
 	client.trace("Listing projects in %q", w.Name)

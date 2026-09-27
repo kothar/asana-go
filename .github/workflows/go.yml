@@ -38,6 +38,41 @@ jobs:
     - name: Test
       run: go test -v ./...
 
+  # Runs the suite in integration/ against a scratch Asana workspace. It needs
+  # the ASANA_TEST_PAT secret and the ASANA_TEST_WORKSPACE variable (plus
+  # ASANA_TEST_TEAM if that workspace is an organization). Without them, as on
+  # pull requests from forks and Dependabot, the tests skip rather than fail.
+  integration:
+    runs-on: ubuntu-latest
+    # One run at a time: every run shares the scratch workspace and its rate
+    # limit. Queued runs wait rather than cancelling one another midway, which
+    # would leave objects behind for the sweeper.
+    concurrency:
+      group: asana-integration
+      cancel-in-progress: false
+    env:
+      ASANA_TEST_PAT: ${{ secrets.ASANA_TEST_PAT }}
+      ASANA_TEST_WORKSPACE: ${{ vars.ASANA_TEST_WORKSPACE }}
+      ASANA_TEST_TEAM: ${{ vars.ASANA_TEST_TEAM }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        # Don't leave the job's token in .git/config where any later step,
+        # including the third-party actions below, could read it.
+        persist-credentials: false
+
+    - name: Set up Go
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      with:
+        go-version: '1.26.x'
+
+    - name: Warn when credentials are missing
+      if: env.ASANA_TEST_PAT == '' || env.ASANA_TEST_WORKSPACE == ''
+      run: echo "::warning::ASANA_TEST_PAT or ASANA_TEST_WORKSPACE is not set, so the Asana integration tests will be skipped"
+
+    - name: Integration test
+      run: go test -v -count=1 -timeout 15m ./integration/...
+
   security:
     runs-on: ubuntu-latest
     permissions:
