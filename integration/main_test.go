@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -368,18 +369,17 @@ func isPaymentRequired(err error) bool {
 
 // contains reports whether a list holds the object with the given gid
 func contains[T asana.Identifiable](items []T, id string) bool {
-	return indexOf(items, id) >= 0
+	return slices.ContainsFunc(items, hasID[T](id))
 }
 
 // indexOf returns the position of the object with the given gid in a list,
 // or -1 if it is missing
 func indexOf[T asana.Identifiable](items []T, id string) int {
-	for i, item := range items {
-		if item.GetID() == id {
-			return i
-		}
-	}
-	return -1
+	return slices.IndexFunc(items, hasID[T](id))
+}
+
+func hasID[T asana.Identifiable](id string) func(T) bool {
+	return func(item T) bool { return item.GetID() == id }
 }
 
 // settingFields returns the custom fields that a project's settings attach
