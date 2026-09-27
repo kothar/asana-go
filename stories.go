@@ -155,6 +155,10 @@ type Story struct {
 	StorySubtypeFields
 }
 
+func (s *Story) GetID() string {
+	return s.ID
+}
+
 // Stories lists all stories attached to a task
 func (t *Task) Stories(client *Client, opts ...*Options) ([]*Story, *NextPage, error) {
 	client.trace("Listing stories for %q", t.Name)

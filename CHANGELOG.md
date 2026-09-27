@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GO-2025-3488: Fixed unexpected memory consumption during token parsing vulnerability
 
 ### Added
+- Added `Project.Delete`, `Tag.Delete` and `CustomField.Delete`
+- Added `GetID()` to every Asana object with a gid, and an `Identifiable` interface
+  that they all satisfy
+- Added an integration test suite in `integration/` that runs against a scratch Asana
+  workspace when `ASANA_TEST_PAT` and `ASANA_TEST_WORKSPACE` are set, and skips otherwise.
+  CI runs it in the `integration` job
 - Added `UserTaskList` support: fetch a user task list by ID, fetch a user's My Tasks
   list for a workspace (`User.TaskList`), and list the tasks it contains
   (`UserTaskList.Tasks`), plus a `--user-task-list` flag in the `asana` command line
@@ -30,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added SECURITY.md with security policy and best practices
 - Added Dependabot configuration for automated dependency updates
 - Added security-focused GitHub Actions workflow
+
+### Fixed
+- `Project.Memberships` never sent the project as the `parent` query parameter, so Asana
+  rejected every call with 400
+- `Project.InsertSection` panicked on every call because its API path lacked a leading slash
 
 ### Changed
 - Enhanced GitHub Actions workflow with multiple security jobs

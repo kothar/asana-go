@@ -34,3 +34,21 @@ p := &asana.Project{
 
 tasks, nextPage, err := p.Tasks(client, &asana.Options{Limit: 10})
 ```
+
+## Testing
+
+`go test ./...` runs the unit tests, which mock the API. The integration tests in
+[integration](integration) call the live API, creating and deleting their own objects
+in a scratch workspace. They are skipped unless these environment variables are set:
+
+| Variable | Purpose |
+| --- | --- |
+| `ASANA_TEST_PAT` | Personal access token for a test account |
+| `ASANA_TEST_WORKSPACE` | gid of the scratch workspace the tests may write to |
+| `ASANA_TEST_TEAM` | Optional: team to create projects in, if the workspace is an organization |
+
+``` sh
+ASANA_TEST_PAT=... ASANA_TEST_WORKSPACE=... go test -v -count=1 ./integration/
+```
+
+Tests of paid features, such as custom fields and dependencies, skip on a free workspace.

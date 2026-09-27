@@ -14,6 +14,10 @@ type EnumValue struct {
 	Enabled bool `json:"enabled"`
 }
 
+func (v *EnumValue) GetID() string {
+	return v.ID
+}
+
 type EnumValueBase struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
@@ -136,6 +140,10 @@ type CustomField struct {
 	AsanaCreatedField string `json:"asana_created_field,omitempty"`
 }
 
+func (f *CustomField) GetID() string {
+	return f.ID
+}
+
 // IsAsanaCreated reports whether this custom field is one that Asana creates and
 // manages automatically (such as the built-in "Priority" and "Status" fields).
 // Such fields cannot be recreated through the API.
@@ -152,6 +160,10 @@ type CustomFieldSetting struct {
 	Project *Project `json:"project,omitempty"`
 
 	Important bool `json:"is_important,omitempty"`
+}
+
+func (s *CustomFieldSetting) GetID() string {
+	return s.ID
 }
 
 type AddCustomFieldSettingRequest struct {
@@ -305,6 +317,14 @@ func (f *CustomField) Fetch(client *Client, options ...*Options) error {
 
 	_, err := client.get(fmt.Sprintf("/custom_fields/%s", f.ID), nil, f, options...)
 	return err
+}
+
+// Delete removes this custom field from the workspace. Locked custom fields
+// can only be deleted by the user who locked them.
+func (f *CustomField) Delete(client *Client) error {
+	client.info("Deleting custom field %q", f.Name)
+
+	return client.delete(fmt.Sprintf("/custom_fields/%s", f.ID))
 }
 
 // CustomFields returns the compact records for all custom fields in the workspace

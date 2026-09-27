@@ -49,12 +49,23 @@ type Tag struct {
 	Followers []*User `json:"followers,omitempty"`
 }
 
+func (t *Tag) GetID() string {
+	return t.ID
+}
+
 // Fetch loads the full details for this Tag
 func (t *Tag) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for tag %q", t.Name)
 
 	_, err := client.get(fmt.Sprintf("/tags/%s", t.ID), nil, t, options...)
 	return err
+}
+
+// Delete removes this tag from the workspace
+func (t *Tag) Delete(client *Client) error {
+	client.info("Deleting tag %q", t.Name)
+
+	return client.delete(fmt.Sprintf("/tags/%s", t.ID))
 }
 
 // Tags returns a list of tags in this workspace

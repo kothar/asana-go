@@ -14,6 +14,7 @@ func TestProject_Memberships(t *testing.T) {
 
 	gock.New("https://app.asana.com").
 		Get("/api/1.0/memberships").
+		MatchParam("parent", "63627").
 		Reply(200).
 		JSON(o{"data": []o{{
 			"gid":              "12345",
@@ -24,7 +25,7 @@ func TestProject_Memberships(t *testing.T) {
 			"resource_subtype": "project_membership",
 		}}})
 
-	project := &Project{}
+	project := &Project{ID: "63627"}
 
 	client := NewClient(http.DefaultClient)
 	memberships, _, err := project.Memberships(client)
@@ -33,7 +34,7 @@ func TestProject_Memberships(t *testing.T) {
 	}
 
 	if len(memberships) != 1 {
-		t.Errorf("Expected 1 membership but found %d", len(memberships))
+		t.Fatalf("Expected 1 membership but found %d", len(memberships))
 	}
 
 	m := memberships[0]

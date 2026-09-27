@@ -31,6 +31,10 @@ type Section struct {
 	Project *Project `json:"project,omitempty"`
 }
 
+func (s *Section) GetID() string {
+	return s.ID
+}
+
 // Fetch loads the full details for this Section
 func (s *Section) Fetch(client *Client) error {
 	client.trace("Loading section details for %q", s.Name)
@@ -82,7 +86,7 @@ type SectionInsertRequest struct {
 func (p *Project) InsertSection(client *Client, request *SectionInsertRequest) error {
 	client.info("Moving section %s", request.Section)
 
-	err := client.post(fmt.Sprintf("projects/%s/sections/insert", p.ID), request, nil)
+	err := client.post(fmt.Sprintf("/projects/%s/sections/insert", p.ID), request, nil)
 	return err
 }
 

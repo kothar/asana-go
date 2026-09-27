@@ -20,6 +20,10 @@ type ProjectMember struct {
 	Name string `json:"name,omitempty"`
 }
 
+func (m *ProjectMember) GetID() string {
+	return m.ID
+}
+
 type ProjectMembership struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
@@ -40,12 +44,16 @@ type ProjectMembership struct {
 	ResourceSubtype string `json:"resource_subtype,omitempty"`
 }
 
+func (m *ProjectMembership) GetID() string {
+	return m.ID
+}
+
 type membershipsRequestParams struct {
 	// Globally unique identifier for goal, project, or portfolio
-	Parent string `json:"parent"`
+	Parent string `url:"parent"`
 
 	// Optional - Globally unique identifier for team or user.
-	Member string `json:"member,omitempty"`
+	Member string `url:"member,omitempty"`
 }
 
 func (p *Project) Memberships(client *Client, options ...*Options) ([]*ProjectMembership, *NextPage, error) {
