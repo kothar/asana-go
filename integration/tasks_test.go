@@ -22,6 +22,9 @@ func TestTaskLifecycle(t *testing.T) {
 			Notes: "Created by the asana-go integration tests",
 			DueOn: &due,
 		},
+		// Asana needs a workspace, parent or projects even when memberships
+		// already name the project
+		Workspace:   f.workspace.ID,
 		Memberships: []*asana.CreateMembership{{Project: p.ID, Section: section.ID}},
 	})
 

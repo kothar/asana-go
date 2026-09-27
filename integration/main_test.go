@@ -139,7 +139,9 @@ func newClient(token string) *asana.Client {
 }
 
 // retryTransport retries requests that Asana rejects as rate limited or
-// temporarily unavailable, honouring the Retry-After header
+// temporarily unavailable, honouring the Retry-After header. It also retries
+// idempotent requests whose connection fails, such as by being reset: a test
+// run makes enough requests that such network blips come up now and then.
 type retryTransport struct {
 	base http.RoundTripper
 }
@@ -149,23 +151,33 @@ func (r *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	for attempt := 1; ; attempt++ {
 		resp, err := r.base.RoundTrip(req)
-		if err != nil || attempt == attempts {
+		if attempt == attempts {
 			return resp, err
-		}
-		if resp.StatusCode != http.StatusTooManyRequests && resp.StatusCode != http.StatusServiceUnavailable {
-			return resp, nil
 		}
 		// A body that can't be replayed (a streamed upload) can't be retried
 		if req.Body != nil && req.GetBody == nil {
+			return resp, err
+		}
+
+		if err != nil {
+			// A POST may have taken effect before the connection failed, so
+			// retrying it could create a duplicate
+			if !idempotent(req.Method) || req.Context().Err() != nil {
+				return resp, err
+			}
+			log.Printf("%s %s failed, retrying: %v", req.Method, req.URL.Path, err)
+		} else if resp.StatusCode != http.StatusTooManyRequests && resp.StatusCode != http.StatusServiceUnavailable {
 			return resp, nil
 		}
 
 		wait := time.Duration(attempt) * 2 * time.Second
-		if seconds, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil {
-			wait = time.Duration(seconds) * time.Second
+		if resp != nil {
+			if seconds, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil {
+				wait = time.Duration(seconds) * time.Second
+			}
+			_ = resp.Body.Close()
+			log.Printf("%s %s returned %d, retrying in %s", req.Method, req.URL.Path, resp.StatusCode, wait)
 		}
-		_ = resp.Body.Close()
-		log.Printf("%s %s returned %d, retrying in %s", req.Method, req.URL.Path, resp.StatusCode, wait)
 
 		select {
 		case <-time.After(wait):
@@ -183,6 +195,16 @@ func (r *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		req = next
 	}
+}
+
+// idempotent reports whether repeating a request with this method has the
+// same effect as making it once
+func idempotent(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodPut, http.MethodDelete:
+		return true
+	}
+	return false
 }
 
 // setup returns the shared fixture, or skips the test when no credentials

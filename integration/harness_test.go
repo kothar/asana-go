@@ -58,3 +58,41 @@ func TestRunTime(t *testing.T) {
 		}
 	}
 }
+
+func TestRetryTransportConnectionReset(t *testing.T) {
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.Method)
+		if len(requests) == 1 {
+			// Drop the connection without answering, as a reset would
+			conn, _, err := w.(http.Hijacker).Hijack()
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			_ = conn.Close()
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client := &http.Client{Transport: &retryTransport{base: http.DefaultTransport}}
+	resp, err := client.Get(server.URL)
+	if err != nil {
+		t.Fatalf("expected the GET to be retried, got %v", err)
+	}
+	_ = resp.Body.Close()
+	if len(requests) != 2 {
+		t.Errorf("expected 2 attempts, got %d", len(requests))
+	}
+
+	// A POST is not retried, since it may already have taken effect
+	requests = nil
+	if _, err := client.Post(server.URL, "text/plain", strings.NewReader("payload")); err == nil {
+		t.Error("expected the POST to fail without a retry")
+	}
+	if len(requests) != 1 {
+		t.Errorf("expected 1 attempt, got %d", len(requests))
+	}
+}
