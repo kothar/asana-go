@@ -58,7 +58,7 @@ func TestCustomFieldValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(fields, text.ID, customFieldID) || !contains(fields, enum.ID, customFieldID) {
+	if !contains(fields, text.ID) || !contains(fields, enum.ID) {
 		t.Error("expected AllCustomFields to include both fields")
 	}
 
@@ -105,10 +105,10 @@ func TestCustomFieldValues(t *testing.T) {
 	if err := fetchedProject.Fetch(f.client); err != nil {
 		t.Fatal(err)
 	}
-	if contains(fetchedProject.CustomFieldSettings, text.ID, settingFieldID) {
+	if contains(settingFields(fetchedProject.CustomFieldSettings), text.ID) {
 		t.Error("expected the text field to be removed from the project")
 	}
-	if !contains(fetchedProject.CustomFieldSettings, enum.ID, settingFieldID) {
+	if !contains(settingFields(fetchedProject.CustomFieldSettings), enum.ID) {
 		t.Error("expected the enum field to stay on the project")
 	}
 
@@ -155,7 +155,7 @@ func TestProjectLocalCustomField(t *testing.T) {
 	if err := fetched.Fetch(f.client); err != nil {
 		t.Fatal(err)
 	}
-	i := indexOf(fetched.CustomFields, field.ID, fieldValueID)
+	i := indexOf(fetched.CustomFields, field.ID)
 	if i < 0 {
 		t.Fatal("expected the task to carry the project-local field")
 	}

@@ -367,43 +367,41 @@ func isPaymentRequired(err error) bool {
 }
 
 // contains reports whether a list holds the object with the given gid
-func contains[T any](items []T, id string, gid func(T) string) bool {
-	return indexOf(items, id, gid) >= 0
+func contains[T asana.Identifiable](items []T, id string) bool {
+	return indexOf(items, id) >= 0
 }
 
 // indexOf returns the position of the object with the given gid in a list,
 // or -1 if it is missing
-func indexOf[T any](items []T, id string, gid func(T) string) int {
+func indexOf[T asana.Identifiable](items []T, id string) int {
 	for i, item := range items {
-		if gid(item) == id {
+		if item.GetID() == id {
 			return i
 		}
 	}
 	return -1
 }
 
-// Accessors for the gid of each resource type, for use with contains
-func projectID(p *asana.Project) string             { return p.ID }
-func taskID(t *asana.Task) string                   { return t.ID }
-func sectionID(s *asana.Section) string             { return s.ID }
-func tagID(t *asana.Tag) string                     { return t.ID }
-func storyID(s *asana.Story) string                 { return s.ID }
-func userID(u *asana.User) string                   { return u.ID }
-func workspaceID(w *asana.Workspace) string         { return w.ID }
-func attachmentID(a *asana.Attachment) string       { return a.ID }
-func customFieldID(f *asana.CustomField) string     { return f.ID }
-func fieldValueID(v *asana.CustomFieldValue) string { return v.ID }
-func settingFieldID(s *asana.CustomFieldSetting) string {
-	if s.CustomField == nil {
-		return ""
+// settingFields returns the custom fields that a project's settings attach
+func settingFields(settings []*asana.CustomFieldSetting) []*asana.CustomField {
+	var fields []*asana.CustomField
+	for _, s := range settings {
+		if s.CustomField != nil {
+			fields = append(fields, s.CustomField)
+		}
 	}
-	return s.CustomField.ID
+	return fields
 }
-func memberID(m *asana.ProjectMembership) string {
-	if m.Member == nil {
-		return ""
+
+// members returns the users and teams that hold a set of memberships
+func members(memberships []*asana.ProjectMembership) []*asana.ProjectMember {
+	var result []*asana.ProjectMember
+	for _, m := range memberships {
+		if m.Member != nil {
+			result = append(result, m.Member)
+		}
 	}
-	return m.Member.ID
+	return result
 }
 
 // eventually retries a check for a short while, for reads that lag behind a

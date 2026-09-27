@@ -19,6 +19,10 @@ type UserTaskList struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 }
 
+func (u *UserTaskList) GetID() string {
+	return u.ID
+}
+
 // Fetch loads the full details for this UserTaskList
 func (u *UserTaskList) Fetch(client *Client, options ...*Options) error {
 	client.trace("Loading details for user task list %q", u.ID)

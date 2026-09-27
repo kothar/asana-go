@@ -20,6 +20,10 @@ type ProjectMember struct {
 	Name string `json:"name,omitempty"`
 }
 
+func (m *ProjectMember) GetID() string {
+	return m.ID
+}
+
 type ProjectMembership struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
@@ -38,6 +42,10 @@ type ProjectMembership struct {
 
 	// Read-only. Type of the membership.
 	ResourceSubtype string `json:"resource_subtype,omitempty"`
+}
+
+func (m *ProjectMembership) GetID() string {
+	return m.ID
 }
 
 type membershipsRequestParams struct {

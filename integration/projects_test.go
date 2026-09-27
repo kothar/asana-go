@@ -45,7 +45,7 @@ func TestProjectLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(projects, p.ID, projectID) {
+	if !contains(projects, p.ID) {
 		t.Errorf("expected AllProjects to include %s", p.ID)
 	}
 
@@ -54,7 +54,7 @@ func TestProjectLifecycle(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !contains(projects, p.ID, projectID) {
+		if !contains(projects, p.ID) {
 			t.Errorf("expected the team's projects to include %s", p.ID)
 		}
 	}
@@ -63,7 +63,7 @@ func TestProjectLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(memberships, f.me.ID, memberID) {
+	if !contains(members(memberships), f.me.ID) {
 		t.Errorf("expected the project's creator %s to be a member, got %d memberships", f.me.ID, len(memberships))
 	}
 
@@ -103,7 +103,7 @@ func TestSections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if i, j := indexOf(sections, first.ID, sectionID), indexOf(sections, second.ID, sectionID); i < 0 || j < 0 || i > j {
+	if i, j := indexOf(sections, first.ID), indexOf(sections, second.ID); i < 0 || j < 0 || i > j {
 		t.Errorf("expected both sections in creation order, found them at %d and %d", i, j)
 	}
 
@@ -127,7 +127,7 @@ func TestSections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if i, j := indexOf(sections, first.ID, sectionID), indexOf(sections, second.ID, sectionID); j < 0 || i < 0 || j > i {
+	if i, j := indexOf(sections, first.ID), indexOf(sections, second.ID); j < 0 || i < 0 || j > i {
 		t.Errorf("expected the second section to move before the first, found them at %d and %d", i, j)
 	}
 
@@ -138,7 +138,7 @@ func TestSections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if contains(sections, second.ID, sectionID) {
+	if contains(sections, second.ID) {
 		t.Error("expected the deleted section to be gone")
 	}
 }

@@ -16,7 +16,7 @@ func TestCurrentUser(t *testing.T) {
 	if me.ID == "" || me.Name == "" {
 		t.Errorf("expected the current user to have a gid and name, got %+v", me)
 	}
-	if !contains(me.Workspaces, f.workspace.ID, workspaceID) {
+	if !contains(me.Workspaces, f.workspace.ID) {
 		t.Errorf("expected the current user's workspaces to include %s", f.workspace.ID)
 	}
 
@@ -36,7 +36,7 @@ func TestWorkspaces(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(workspaces, f.workspace.ID, workspaceID) {
+	if !contains(workspaces, f.workspace.ID) {
 		t.Errorf("expected AllWorkspaces to include %s", f.workspace.ID)
 	}
 
@@ -64,7 +64,7 @@ func TestWorkspaceUsers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(users, f.me.ID, userID) {
+	if !contains(users, f.me.ID) {
 		t.Errorf("expected the workspace users to include the current user %s", f.me.ID)
 	}
 }
@@ -123,7 +123,7 @@ func TestUserTaskList(t *testing.T) {
 		opts := &asana.Options{Limit: 100}
 		for {
 			tasks, next, err := list.Tasks(f.client, opts)
-			if err != nil || contains(tasks, task.ID, taskID) {
+			if err != nil || contains(tasks, task.ID) {
 				return err == nil, err
 			}
 			if next == nil {
@@ -141,7 +141,7 @@ func TestUserTaskList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(tasks, task.ID, taskID) {
+	if !contains(tasks, task.ID) {
 		t.Errorf("expected QueryTasks by assignee to include %s", task.ID)
 	}
 }

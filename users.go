@@ -30,6 +30,10 @@ type User struct {
 	Workspaces []*Workspace `json:"workspaces,omitempty"`
 }
 
+func (u *User) GetID() string {
+	return u.ID
+}
+
 // CurrentUser gets the currently authorized user
 func (c *Client) CurrentUser() (*User, error) {
 

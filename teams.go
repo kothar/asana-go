@@ -23,6 +23,10 @@ type Team struct {
 	Organization *Workspace `json:"organization,omitempty"`
 }
 
+func (t *Team) GetID() string {
+	return t.ID
+}
+
 // Fetch loads the full details for this Team
 func (t *Team) Fetch(client *Client) error {
 	client.trace("Loading team details for %q\n", t.Name)

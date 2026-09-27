@@ -33,6 +33,10 @@ type Workspace struct {
 	EmailDomains []string `json:"email_domains,omitempty"`
 }
 
+func (w *Workspace) GetID() string {
+	return w.ID
+}
+
 // Fetch loads the full details for this Workspace
 func (w *Workspace) Fetch(client *Client) error {
 	client.trace("Loading details for workspace %s\n", w.ID)

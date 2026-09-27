@@ -31,7 +31,7 @@ func TestComments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(stories, comment.ID, storyID) {
+	if !contains(stories, comment.ID) {
 		t.Error("expected the task's stories to include the comment")
 	}
 
@@ -50,7 +50,7 @@ func TestComments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if contains(stories, comment.ID, storyID) {
+	if contains(stories, comment.ID) {
 		t.Error("expected the deleted comment to be gone")
 	}
 }
@@ -82,7 +82,7 @@ func TestTags(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(tags, tag.ID, tagID) {
+	if !contains(tags, tag.ID) {
 		t.Error("expected AllTags to include the tag")
 	}
 
@@ -95,7 +95,7 @@ func TestTags(t *testing.T) {
 	if err := fetchedTask.Fetch(f.client); err != nil {
 		t.Fatal(err)
 	}
-	if !contains(fetchedTask.Tags, tag.ID, tagID) {
+	if !contains(fetchedTask.Tags, tag.ID) {
 		t.Error("expected the task to carry the tag")
 	}
 
@@ -140,10 +140,10 @@ func TestAttachments(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(attachments, external.ID, attachmentID) {
+	if !contains(attachments, external.ID) {
 		t.Error("expected the task's attachments to include the external link")
 	}
-	i := indexOf(attachments, uploaded.ID, attachmentID)
+	i := indexOf(attachments, uploaded.ID)
 	if i < 0 {
 		t.Fatal("expected the task's attachments to include the upload")
 	}

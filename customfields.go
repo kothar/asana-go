@@ -14,6 +14,10 @@ type EnumValue struct {
 	Enabled bool `json:"enabled"`
 }
 
+func (v *EnumValue) GetID() string {
+	return v.ID
+}
+
 type EnumValueBase struct {
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
@@ -136,6 +140,10 @@ type CustomField struct {
 	AsanaCreatedField string `json:"asana_created_field,omitempty"`
 }
 
+func (f *CustomField) GetID() string {
+	return f.ID
+}
+
 // IsAsanaCreated reports whether this custom field is one that Asana creates and
 // manages automatically (such as the built-in "Priority" and "Status" fields).
 // Such fields cannot be recreated through the API.
@@ -152,6 +160,10 @@ type CustomFieldSetting struct {
 	Project *Project `json:"project,omitempty"`
 
 	Important bool `json:"is_important,omitempty"`
+}
+
+func (s *CustomFieldSetting) GetID() string {
+	return s.ID
 }
 
 type AddCustomFieldSettingRequest struct {

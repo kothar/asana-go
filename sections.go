@@ -31,6 +31,10 @@ type Section struct {
 	Project *Project `json:"project,omitempty"`
 }
 
+func (s *Section) GetID() string {
+	return s.ID
+}
+
 // Fetch loads the full details for this Section
 func (s *Section) Fetch(client *Client) error {
 	client.trace("Loading section details for %q", s.Name)

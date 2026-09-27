@@ -35,6 +35,11 @@ func (d *Date) UnmarshalJSON(value []byte) error {
 	return nil
 }
 
+// Identifiable is implemented by every Asana object that has a gid
+type Identifiable interface {
+	GetID() string
+}
+
 // Validator types have a Validate method which is called before posting the
 // data to the API
 type Validator interface {

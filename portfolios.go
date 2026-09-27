@@ -7,6 +7,10 @@ type Portfolio struct {
 	ID string `json:"gid,omitempty"`
 }
 
+func (p *Portfolio) GetID() string {
+	return p.ID
+}
+
 // Projects returns a list of projects in this workspace
 func (w *Workspace) Portfolios(client *Client, options ...*Options) ([]*Portfolio, *NextPage, error) {
 	client.trace("Listing portfolios in %q", w.Name)

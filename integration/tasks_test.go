@@ -46,7 +46,7 @@ func TestTaskLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(tasks, task.ID, taskID) {
+	if !contains(tasks, task.ID) {
 		t.Error("expected the project's tasks to include the task")
 	}
 
@@ -54,7 +54,7 @@ func TestTaskLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(tasks, task.ID, taskID) {
+	if !contains(tasks, task.ID) {
 		t.Error("expected the section's tasks to include the task")
 	}
 
@@ -62,7 +62,7 @@ func TestTaskLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(tasks, task.ID, taskID) {
+	if !contains(tasks, task.ID) {
 		t.Error("expected QueryTasks by project to include the task")
 	}
 
@@ -167,7 +167,7 @@ func TestSubtasks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if i, j := indexOf(subtasks, sub.ID, taskID), indexOf(subtasks, moved.ID, taskID); i < 0 || j < 0 || j < i {
+	if i, j := indexOf(subtasks, sub.ID), indexOf(subtasks, moved.ID); i < 0 || j < 0 || j < i {
 		t.Errorf("expected both subtasks with the moved one last, found them at %d and %d", i, j)
 	}
 }
@@ -186,7 +186,7 @@ func TestTaskProjects(t *testing.T) {
 	if err := fetched.Fetch(f.client); err != nil {
 		t.Fatal(err)
 	}
-	if !contains(fetched.Projects, home.ID, projectID) || !contains(fetched.Projects, other.ID, projectID) {
+	if !contains(fetched.Projects, home.ID) || !contains(fetched.Projects, other.ID) {
 		t.Errorf("expected the task to be in both projects, got %d projects", len(fetched.Projects))
 	}
 
@@ -197,7 +197,7 @@ func TestTaskProjects(t *testing.T) {
 	if err := fetched.Fetch(f.client); err != nil {
 		t.Fatal(err)
 	}
-	if contains(fetched.Projects, other.ID, projectID) {
+	if contains(fetched.Projects, other.ID) {
 		t.Error("expected the task to be removed from the other project")
 	}
 }
@@ -224,7 +224,7 @@ func TestTaskDependencies(t *testing.T) {
 	if err := fetched.Fetch(f.client, fields); err != nil {
 		t.Fatal(err)
 	}
-	if !contains(fetched.Dependents, blocked.ID, taskID) || !contains(fetched.Dependents, follower.ID, taskID) {
+	if !contains(fetched.Dependents, blocked.ID) || !contains(fetched.Dependents, follower.ID) {
 		t.Errorf("expected the blocker to have both dependents, got %d", len(fetched.Dependents))
 	}
 
@@ -232,7 +232,7 @@ func TestTaskDependencies(t *testing.T) {
 	if err := fetched.Fetch(f.client, fields); err != nil {
 		t.Fatal(err)
 	}
-	if !contains(fetched.Dependencies, blocker.ID, taskID) {
+	if !contains(fetched.Dependencies, blocker.ID) {
 		t.Errorf("expected the blocked task to depend on %s, got %d dependencies", blocker.ID, len(fetched.Dependencies))
 	}
 }

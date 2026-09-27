@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added `Project.Delete`, `Tag.Delete` and `CustomField.Delete`
+- Added `GetID()` to every Asana object with a gid, and an `Identifiable` interface
+  that they all satisfy
 - Added an integration test suite in `integration/` that runs against a scratch Asana
   workspace when `ASANA_TEST_PAT` and `ASANA_TEST_WORKSPACE` are set, and skips otherwise.
   CI runs it in the `integration` job
