@@ -53,6 +53,56 @@ func TestWorkspaceUsers(t *testing.T) {
 	}
 }
 
+func TestWorkspaceMemberships(t *testing.T) {
+	f := setup(t)
+
+	membership := mustReturn(f.workspace.MembershipFor(f.client, "me"))(t)
+	if membership == nil {
+		t.Fatalf("expected the current user to have a membership of workspace %s", f.workspace.ID)
+	}
+	if membership.User == nil || membership.User.ID != f.me.ID {
+		t.Errorf("expected the membership to belong to %s, got %+v", f.me.ID, membership.User)
+	}
+	if membership.Workspace == nil || membership.Workspace.ID != f.workspace.ID {
+		t.Errorf("expected the membership to be for workspace %s, got %+v", f.workspace.ID, membership.Workspace)
+	}
+	if !asana.IsTrue(membership.IsActive) {
+		t.Error("expected the current user's membership to be active")
+	}
+	if membership.IsGuest == nil || *membership.IsGuest {
+		t.Errorf("expected the current user to be a full member, not a guest (is_guest: %v)", membership.IsGuest)
+	}
+
+	byID := mustReturn(f.workspace.MembershipFor(f.client, f.me.ID))(t)
+	if byID == nil || byID.ID != membership.ID {
+		t.Errorf("expected looking up the user by gid to find membership %s, got %+v", membership.ID, byID)
+	}
+
+	fetched := &asana.WorkspaceMembership{ID: membership.ID}
+	must(t, fetched.Fetch(f.client))
+	if fetched.Workspace == nil || fetched.Workspace.ID != f.workspace.ID {
+		t.Errorf("expected the fetched membership to be for workspace %s, got %+v", f.workspace.ID, fetched.Workspace)
+	}
+
+	mine := mustPage(f.me.WorkspaceMemberships(f.client, &asana.Options{Limit: 100}))(t)
+	if !contains(mine, membership.ID) {
+		t.Errorf("expected the current user's memberships to include %s", membership.ID)
+	}
+
+	opts := &asana.Options{Limit: 100}
+	for {
+		memberships, next, err := f.workspace.WorkspaceMemberships(f.client, opts)
+		must(t, err)
+		if contains(memberships, membership.ID) {
+			return
+		}
+		if next == nil {
+			t.Fatalf("expected the workspace memberships to include %s", membership.ID)
+		}
+		opts = &asana.Options{Limit: 100, Offset: next.Offset}
+	}
+}
+
 func TestTeams(t *testing.T) {
 	f := setup(t)
 	if !f.workspace.IsOrganization {

@@ -93,6 +93,17 @@ func IsAuthError(err error) bool {
 	return false
 }
 
+// IsPaymentRequired checks if the provided error represents a 402 Payment
+// Required response from the API. Asana returns this when the request needs a
+// feature that the workspace's plan, or the user's membership, does not
+// include, such as custom fields for free workspaces or guests.
+func IsPaymentRequired(err error) bool {
+	if e, ok := IsAsanaError(err); ok {
+		return e.StatusCode == 402
+	}
+	return false
+}
+
 // IsRateLimited returns true if the error was a rate limit error
 func IsRateLimited(err error) bool {
 	if e, ok := IsAsanaError(err); ok {

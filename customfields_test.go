@@ -2,7 +2,10 @@ package asana
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
+
+	"github.com/h2non/gock"
 )
 
 func TestCustomFieldBase_Precision_ParseZero(t *testing.T) {
@@ -53,16 +56,16 @@ func TestCustomField_AsanaCreatedField_Parse(t *testing.T) {
 	if err := json.Unmarshal([]byte(`
 {
 	"gid": "123",
-	"name": "Priority",
-	"resource_subtype": "enum",
-	"asana_created_field": "priority"
+	"name": "Deal size",
+	"resource_subtype": "number",
+	"asana_created_field": "deal_size"
 }
 `), cf); err != nil {
 		t.Fatal(err)
 	}
 
-	if cf.AsanaCreatedField != "priority" {
-		t.Errorf("Expected AsanaCreatedField to be %q, but saw %q", "priority", cf.AsanaCreatedField)
+	if cf.AsanaCreatedField != "deal_size" {
+		t.Errorf("Expected AsanaCreatedField to be %q, but saw %q", "deal_size", cf.AsanaCreatedField)
 	}
 	if !cf.IsAsanaCreated() {
 		t.Errorf("Expected IsAsanaCreated to be true for an Asana-created field")
@@ -100,4 +103,22 @@ func TestCustomField_AsanaCreatedField_RequestedInFields(t *testing.T) {
 		}
 	}
 	t.Errorf("Expected Fields(CustomField{}) to include %q, got %v", "asana_created_field", options.Fields)
+}
+
+func TestCustomField_Delete(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://app.asana.com").
+		Delete("/api/1.0/custom_fields/1234").
+		Reply(200).
+		JSON(map[string]any{"data": map[string]any{}})
+
+	client := NewClient(http.DefaultClient)
+	field := &CustomField{ID: "1234"}
+	if err := field.Delete(client); err != nil {
+		t.Fatal(err)
+	}
+	if !gock.IsDone() {
+		t.Error("Expected DELETE request to be made")
+	}
 }

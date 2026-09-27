@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added an integration test suite in `integration/` that runs against a scratch Asana
   workspace when `ASANA_TEST_PAT` and `ASANA_TEST_WORKSPACE` are set, and skips otherwise.
   CI runs it in the `integration` job
+- Added `IsPaymentRequired` to detect 402 responses returned when a feature is
+  not available on the workspace's plan or to guests
+- Added `WorkspaceMembership` support: list memberships for a user or a
+  workspace, fetch a membership by ID, and look up a user's membership of a
+  workspace (`Workspace.MembershipFor`) to tell whether they are a guest
 
 ### Fixed
 - `Project.Memberships` never sent the project as the `parent` query parameter, so Asana
@@ -36,8 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`UserTaskList.Tasks`), plus a `--user-task-list` flag in the `asana` command line
   tool (originally contributed in #5)
 - Added the read-only `asana_created_field` property to `CustomField`, along with an
-  `IsAsanaCreated()` helper, so callers can detect fields that Asana creates and manages
-  automatically (e.g. "Priority", "Status") and which cannot be created through the API
+  `IsAsanaCreated()` helper
 - Added comprehensive security scanning to CI/CD pipeline:
   - `govulncheck` for Go vulnerability scanning
   - Trivy for dependency and container vulnerability scanning

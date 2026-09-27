@@ -21,3 +21,21 @@ func TestCauseWrappedError(t *testing.T) {
 		t.Error("Expected double-wrapped error to be recoverable")
 	}
 }
+
+func TestIsPaymentRequired(t *testing.T) {
+	cause := &Error{StatusCode: 402}
+	wrapped := fmt.Errorf("Wrapping: %w", cause)
+
+	if !IsPaymentRequired(cause) {
+		t.Error("Expected 402 error to be payment required")
+	}
+	if !IsPaymentRequired(wrapped) {
+		t.Error("Expected wrapped 402 error to be payment required")
+	}
+	if IsPaymentRequired(&Error{StatusCode: 403}) {
+		t.Error("Expected 403 error not to be payment required")
+	}
+	if IsPaymentRequired(fmt.Errorf("not an asana error")) {
+		t.Error("Expected non-Asana error not to be payment required")
+	}
+}
