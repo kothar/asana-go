@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   workspace (`Workspace.MembershipFor`) to tell whether they are a guest
 
 ### Fixed
+- Rate limit errors never carried Asana's `Retry-After` value, so `RetryAfter` always
+  returned 0 for a 429
 - `Project.Memberships` never sent the project as the `parent` query parameter, so Asana
   rejected every call with 400
 - `Project.InsertSection` panicked on every call because its API path lacked a leading slash
