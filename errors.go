@@ -26,7 +26,7 @@ func (r *Response) Error(resp *http.Response, requestID xid.ID) error {
 	retryHeader := resp.Header.Get("Retry-After")
 	if retryHeader != "" {
 		retryAfter, err := strconv.ParseInt(retryHeader, 10, 64)
-		if err != nil {
+		if err == nil {
 			asanaError.RetryAfter = time.Duration(retryAfter) * time.Second
 		}
 	}
