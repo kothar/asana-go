@@ -10,7 +10,8 @@
 //	                      first team the account can see)
 //	ASANA_TEST_CUSTOM_TYPE_PROJECT
 //	                      optional gid of a project with a custom task type,
-//	                      for TestCustomTypeProbe
+//	                      for TestCustomTypeProbe (which otherwise looks for
+//	                      one in the scratch workspace)
 //
 // When ASANA_TEST_PAT or ASANA_TEST_WORKSPACE is unset every test is skipped,
 // so `go test ./...` stays offline.

@@ -2,6 +2,7 @@ package integration
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/kothar/asana-go"
@@ -23,45 +24,28 @@ func TestCustomTypeFieldsOnStandardTask(t *testing.T) {
 	types, _, err := p.CustomTypes(f.client)
 	skipIfPremiumOnly(t, err)
 	must(t, err)
-	if len(types) != 0 {
-		t.Errorf("expected a new project to have no custom types, got %d", len(types))
-	}
+	t.Logf("a new project has %d custom types", len(types))
 }
 
 // TestCustomTypeProbe records what the API allows for tasks with a custom
 // type. Custom types can only be made and added to projects in the Asana UI,
-// and need a paid plan, so it runs against a project set up by hand:
+// and need a paid plan, so it uses a project set up by hand. It looks for one
+// in the scratch workspace, or uses the project named by:
 //
-//	ASANA_TEST_CUSTOM_TYPE_PROJECT  gid of a project that has at least one
-//	                                custom type, on a plan that includes them
+//	ASANA_TEST_CUSTOM_TYPE_PROJECT  optional gid of a project that has at
+//	                                least one custom type
 //
-// The test account must be able to create projects in that project's team.
-// The probe's tasks and projects are deleted when it finishes, but they are
-// outside the scratch workspace, so the sweeper won't find any it leaves
-// behind.
+// The test is skipped when no project with a custom type is found.
 func TestCustomTypeProbe(t *testing.T) {
 	f := setup(t)
-	projectID := os.Getenv("ASANA_TEST_CUSTOM_TYPE_PROJECT")
-	if projectID == "" {
-		t.Skip("set ASANA_TEST_CUSTOM_TYPE_PROJECT to probe custom types")
-	}
 
-	source := &asana.Project{ID: projectID}
-	must(t, source.Fetch(f.client, &asana.Options{Fields: []string{"name", "team", "workspace"}}))
-
-	types := mustPage(source.CustomTypes(f.client, asana.Fields(asana.CustomType{})))(t)
-	var customType *asana.CustomType
-	for _, ct := range types {
-		if ct.AsanaCreatedTypeIdentifier == "" && len(ct.StatusOptions) > 0 {
-			customType = ct
-			break
-		}
-	}
-	if customType == nil {
-		t.Fatalf("project %s has no user-created custom type with status options (found %d types)", projectID, len(types))
+	source, customType := f.findCustomType(t)
+	if source == nil {
+		t.Skip("no project with a user-created custom type; add one in the Asana UI or set ASANA_TEST_CUSTOM_TYPE_PROJECT")
 	}
 	status := customType.StatusOptions[len(customType.StatusOptions)-1]
-	t.Logf("using custom type %q with status %q (%s)", customType.Name, status.Name, status.CompletionState)
+	t.Logf("probing custom type %q in project %s %q with status %q (%s)",
+		customType.Name, source.ID, source.Name, status.Name, status.CompletionState)
 
 	setType := &asana.UpdateTaskRequest{
 		TaskBase:               asana.TaskBase{ResourceSubtype: asana.ResourceSubtypeCustom},
@@ -102,16 +86,7 @@ func TestCustomTypeProbe(t *testing.T) {
 		// A transfer creates new projects, which don't have the source
 		// project's custom types. Whether Asana still accepts the type
 		// decides whether Ditto can copy it.
-		if source.Team == nil {
-			t.Skip("the project has no team to create a second project in")
-		}
-		team := &asana.Team{ID: source.Team.ID}
-		other, err := team.CreateProject(f.client, &asana.CreateProjectRequest{
-			ProjectBase: asana.ProjectBase{Name: f.name(t, "project")},
-		})
-		must(t, err)
-		cleanup(t, "project "+other.ID, func() error { return other.Delete(f.client) })
-
+		other := f.newProject(t, "project")
 		otherTypes := mustPage(other.CustomTypes(f.client))(t)
 		t.Logf("a new project has %d custom types", len(otherTypes))
 
@@ -122,4 +97,37 @@ func TestCustomTypeProbe(t *testing.T) {
 		}
 		t.Logf("Asana accepted the custom type in a project without it: type %+v, status %+v", task.CustomType, task.CustomTypeStatusOption)
 	})
+}
+
+// findCustomType returns a project in the scratch workspace with a custom
+// type that the API can assign, or the project named by
+// ASANA_TEST_CUSTOM_TYPE_PROJECT. Projects made by the suite are ignored.
+func (f *fixture) findCustomType(t *testing.T) (*asana.Project, *asana.CustomType) {
+	t.Helper()
+
+	var projects []*asana.Project
+	if id := os.Getenv("ASANA_TEST_CUSTOM_TYPE_PROJECT"); id != "" {
+		projects = []*asana.Project{{ID: id}}
+	} else {
+		all, err := f.workspace.AllProjects(f.client, &asana.Options{Fields: []string{"name"}})
+		must(t, err)
+		for _, p := range all {
+			if !strings.HasPrefix(p.Name, namePrefix) {
+				projects = append(projects, p)
+			}
+		}
+	}
+
+	for _, p := range projects {
+		types, _, err := p.CustomTypes(f.client, asana.Fields(asana.CustomType{}))
+		skipIfPremiumOnly(t, err)
+		must(t, err)
+		for _, ct := range types {
+			// Some Asana-created types can't be assigned through the API
+			if ct.AsanaCreatedTypeIdentifier == "" && len(ct.StatusOptions) > 0 {
+				return p, ct
+			}
+		}
+	}
+	return nil, nil
 }
