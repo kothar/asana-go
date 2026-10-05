@@ -42,6 +42,36 @@ func TestRetryTransport(t *testing.T) {
 	}
 }
 
+func TestRetryTransportDeleteAlreadyDone(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// The first delete takes effect but the response is lost to a 503
+		if calls.Add(1) == 1 {
+			w.Header().Set("Retry-After", "0")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	client := &http.Client{Transport: &retryTransport{base: http.DefaultTransport}}
+	req := mustReturn(http.NewRequest(http.MethodDelete, server.URL, nil))(t)
+	resp := mustReturn(client.Do(req))(t)
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected a 404 on retry to count as deleted, got %d", resp.StatusCode)
+	}
+
+	// A 404 on the first attempt is still an error
+	resp = mustReturn(client.Do(mustReturn(http.NewRequest(http.MethodDelete, server.URL, nil))(t)))(t)
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("expected a first-attempt 404 to pass through, got %d", resp.StatusCode)
+	}
+}
+
 func TestRunTime(t *testing.T) {
 	f := &fixture{runID: namePrefix + " " + xid.New().String()}
 	created, ok := runTime(f.name(t, "task"))
