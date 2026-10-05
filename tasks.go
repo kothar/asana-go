@@ -178,6 +178,14 @@ type CreateTaskRequest struct {
 	Memberships  []*CreateMembership    `json:"memberships,omitempty"`
 	Tags         []string               `json:"tags,omitempty"`
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+
+	// The gid of a custom type to give the task. Asana requires it when
+	// ResourceSubtype is "custom", and only accepts a type that is available
+	// in one of the task's projects.
+	CustomType string `json:"custom_type,omitempty"`
+
+	// The gid of one of the custom type's status options
+	CustomTypeStatusOption string `json:"custom_type_status_option,omitempty"`
 }
 
 type CreateMembership struct {
@@ -193,8 +201,8 @@ type UpdateTaskRequest struct {
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 
 	// The gid of a custom type to give the task. Asana only accepts it when
-	// ResourceSubtype is "custom". It can't be set when creating a task, so
-	// it is only on UpdateTaskRequest.
+	// ResourceSubtype is "custom", and only for a type that is available in
+	// one of the task's projects.
 	CustomType string `json:"custom_type,omitempty"`
 
 	// The gid of one of the custom type's status options. Asana only accepts
@@ -308,11 +316,12 @@ type Task struct {
 	Dependents []*Task `json:"dependents,omitempty"`
 
 	// Read-only. Opt In. The custom type of the task, when its
-	// resource_subtype is "custom". Change it with UpdateTaskRequest.
+	// resource_subtype is "custom". Set it with CreateTaskRequest or
+	// UpdateTaskRequest.
 	CustomType *CustomType `json:"custom_type,omitempty"`
 
-	// Read-only. Opt In. The task's status within its custom type. Change it
-	// with UpdateTaskRequest.
+	// Read-only. Opt In. The task's status within its custom type. Set it
+	// with CreateTaskRequest or UpdateTaskRequest.
 	CustomTypeStatusOption *CustomTypeStatusOption `json:"custom_type_status_option,omitempty"`
 }
 

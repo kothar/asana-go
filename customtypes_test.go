@@ -66,23 +66,6 @@ func TestTask_CustomTypeFields(t *testing.T) {
 	}
 }
 
-func TestCreateTaskRequest_OmitsCustomType(t *testing.T) {
-	// POST /tasks rejects custom types, so a create request must never carry one
-	body, err := json.Marshal(&CreateTaskRequest{TaskBase: TaskBase{Name: "Task"}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var fields map[string]any
-	if err := json.Unmarshal(body, &fields); err != nil {
-		t.Fatal(err)
-	}
-	for _, name := range []string{"custom_type", "custom_type_status_option"} {
-		if _, ok := fields[name]; ok {
-			t.Errorf("Expected a create request not to send %s", name)
-		}
-	}
-}
-
 func TestTask_UpdateCustomType(t *testing.T) {
 	defer gock.Off()
 

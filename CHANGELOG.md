@@ -21,8 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   workspace (`Workspace.MembershipFor`) to tell whether they are a guest
 - Added custom task type support: `Task.CustomType` and `Task.CustomTypeStatusOption`,
   `Project.CustomTypes` and `CustomType.Fetch`, and `CustomType` and
-  `CustomTypeStatusOption` on `UpdateTaskRequest`. Asana can't create a task with a
-  custom type, so `CreateTaskRequest` doesn't carry them
+  `CustomTypeStatusOption` on `CreateTaskRequest` and `UpdateTaskRequest`
 
 ### Fixed
 - Rate limit errors never carried Asana's `Retry-After` value, so `RetryAfter` always

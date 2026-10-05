@@ -33,9 +33,8 @@ func (o *CustomTypeStatusOption) GetID() string {
 // CustomType is a task type defined in Asana, such as 'Bug' or 'Request'. Each
 // type has its own set of statuses.
 //
-// Custom types are added to projects in the Asana UI. The API can list the
-// types available in a project and set the type of an existing task, but
-// can't create a task with a custom type (POST /tasks rejects it).
+// Custom types are added to projects in the Asana UI; the API can't add one.
+// A task can only be given a type that is available in one of its projects.
 type CustomType struct {
 	// Read-only. Globally unique ID of the object
 	ID string `json:"gid,omitempty"`
