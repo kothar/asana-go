@@ -42,6 +42,7 @@ jobs:
   # the ASANA_TEST_PAT secret and the ASANA_TEST_WORKSPACE variable (plus
   # ASANA_TEST_TEAM if that workspace is an organization). Without them, as on
   # pull requests from forks and Dependabot, the tests skip rather than fail.
+  # The ASANA_TEST_CUSTOM_TYPE_PROJECT variable turns on the custom type probe.
   integration:
     runs-on: ubuntu-latest
     # One run at a time: every run shares the scratch workspace and its rate
@@ -54,6 +55,7 @@ jobs:
       ASANA_TEST_PAT: ${{ secrets.ASANA_TEST_PAT }}
       ASANA_TEST_WORKSPACE: ${{ vars.ASANA_TEST_WORKSPACE }}
       ASANA_TEST_TEAM: ${{ vars.ASANA_TEST_TEAM }}
+      ASANA_TEST_CUSTOM_TYPE_PROJECT: ${{ vars.ASANA_TEST_CUSTOM_TYPE_PROJECT }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:

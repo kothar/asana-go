@@ -191,6 +191,15 @@ type UpdateTaskRequest struct {
 	Assignee     string                 `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
 	Followers    []string               `json:"followers,omitempty"` // Array of users following this task.
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+
+	// The gid of a custom type to give the task. Asana only accepts it when
+	// ResourceSubtype is "custom". It can't be set when creating a task, so
+	// it is only on UpdateTaskRequest.
+	CustomType string `json:"custom_type,omitempty"`
+
+	// The gid of one of the custom type's status options. Asana only accepts
+	// it when ResourceSubtype is "custom".
+	CustomTypeStatusOption string `json:"custom_type_status_option,omitempty"`
 }
 
 // Task is the basic object around which many operations in Asana are
@@ -297,6 +306,14 @@ type Task struct {
 	// Read-only. Array of resources referencing tasks that depend on this task.
 	// The objects contain only the ID of the dependent.
 	Dependents []*Task `json:"dependents,omitempty"`
+
+	// Read-only. Opt In. The custom type of the task, when its
+	// resource_subtype is "custom". Change it with UpdateTaskRequest.
+	CustomType *CustomType `json:"custom_type,omitempty"`
+
+	// Read-only. Opt In. The task's status within its custom type. Change it
+	// with UpdateTaskRequest.
+	CustomTypeStatusOption *CustomTypeStatusOption `json:"custom_type_status_option,omitempty"`
 }
 
 // Fetch loads the full details for this Task

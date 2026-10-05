@@ -8,6 +8,9 @@
 //	ASANA_TEST_TEAM       optional gid of the team to create projects in, when
 //	                      the workspace is an organization (defaults to the
 //	                      first team the account can see)
+//	ASANA_TEST_CUSTOM_TYPE_PROJECT
+//	                      optional gid of a project with a custom task type,
+//	                      for TestCustomTypeProbe
 //
 // When ASANA_TEST_PAT or ASANA_TEST_WORKSPACE is unset every test is skipped,
 // so `go test ./...` stays offline.
