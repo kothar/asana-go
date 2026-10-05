@@ -1,6 +1,11 @@
 package integration
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -67,6 +72,27 @@ func TestCustomTypeProbe(t *testing.T) {
 		t.Logf("Asana refused the new task: %v", err)
 	})
 
+	t.Run("create with a custom type", func(t *testing.T) {
+		// The refusal above asks for a custom_type, which CreateTaskRequest
+		// doesn't carry, so send the request by hand
+		body := map[string]any{"data": map[string]any{
+			"name":                      f.name(t, "task"),
+			"projects":                  []string{source.ID},
+			"resource_subtype":          asana.ResourceSubtypeCustom,
+			"custom_type":               customType.ID,
+			"custom_type_status_option": status.ID,
+		}}
+		id, err := f.postTask(body)
+		if err != nil {
+			t.Logf("Asana refused a new task with a custom type: %v", err)
+			return
+		}
+		task := &asana.Task{ID: id}
+		cleanup(t, "task "+id, func() error { return task.Delete(f.client) })
+		must(t, task.Fetch(f.client, asana.Fields(asana.Task{})))
+		t.Logf("Asana created %s with type %+v and status %+v", id, task.CustomType, task.CustomTypeStatusOption)
+	})
+
 	t.Run("set the type in its project", func(t *testing.T) {
 		task := f.newTask(t, &asana.CreateTaskRequest{Projects: []string{source.ID}})
 		must(t, task.Update(f.client, setType))
@@ -99,6 +125,13 @@ func TestCustomTypeProbe(t *testing.T) {
 	})
 }
 
+// customTypeFields asks for the status options' details, which a plain
+// "status_options" field leaves out
+var customTypeFields = &asana.Options{Fields: []string{
+	"name", "asana_created_type_identifier",
+	"status_options.name", "status_options.completion_state", "status_options.enabled", "status_options.color",
+}}
+
 // findCustomType returns a project in the scratch workspace with a custom
 // type that the API can assign, or the project named by
 // ASANA_TEST_CUSTOM_TYPE_PROJECT. Projects made by the suite are ignored.
@@ -119,7 +152,7 @@ func (f *fixture) findCustomType(t *testing.T) (*asana.Project, *asana.CustomTyp
 	}
 
 	for _, p := range projects {
-		types, _, err := p.CustomTypes(f.client, asana.Fields(asana.CustomType{}))
+		types, _, err := p.CustomTypes(f.client, customTypeFields)
 		skipIfPremiumOnly(t, err)
 		must(t, err)
 		for _, ct := range types {
@@ -130,4 +163,42 @@ func (f *fixture) findCustomType(t *testing.T) (*asana.Project, *asana.CustomTyp
 		}
 	}
 	return nil, nil
+}
+
+// postTask creates a task from a raw request body, for fields the client
+// doesn't model, and returns its gid
+func (f *fixture) postTask(body any) (string, error) {
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequest(http.MethodPost, "https://app.asana.com/api/1.0/tasks", bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+f.token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode != http.StatusCreated {
+		return "", fmt.Errorf("%d: %s", resp.StatusCode, content)
+	}
+	var result struct {
+		Data struct {
+			ID string `json:"gid"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(content, &result); err != nil {
+		return "", err
+	}
+	return result.Data.ID, nil
 }

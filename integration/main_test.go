@@ -25,6 +25,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -167,6 +168,13 @@ func (r *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	for attempt := 1; ; attempt++ {
 		resp, err := r.base.RoundTrip(req)
+		if err == nil && attempt > 1 && req.Method == http.MethodDelete && resp.StatusCode == http.StatusNotFound {
+			// An earlier attempt deleted the object before failing, such as
+			// with a 503 from a proxy, so the delete has done its job
+			_ = resp.Body.Close()
+			log.Printf("%s %s returned 404 on retry, so an earlier attempt deleted it", req.Method, req.URL.Path)
+			return deleted(req), nil
+		}
 		if attempt == attempts {
 			return resp, err
 		}
@@ -210,6 +218,20 @@ func (r *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			next.Body = body
 		}
 		req = next
+	}
+}
+
+// deleted is the response Asana gives for a successful delete
+func deleted(req *http.Request) *http.Response {
+	return &http.Response{
+		Status:     "200 OK",
+		StatusCode: http.StatusOK,
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       io.NopCloser(strings.NewReader(`{"data":{}}`)),
+		Request:    req,
 	}
 }
 
