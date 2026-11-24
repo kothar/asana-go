@@ -279,3 +279,179 @@ func TestProject_AddProjectLocalCustomField_Reference(t *testing.T) {
 		t.Errorf("Unexpected setting response: %+v", setting)
 	}
 }
+
+func TestCustomField_ReadOnlyFlagsAndDurationFormat(t *testing.T) {
+	wantFields := []string{
+		"id_prefix", "representation_type", "is_formula_field", "is_lookup_field", "is_value_read_only",
+	}
+	cfFields := Fields(CustomField{}).Fields
+	cfvFields := Fields(CustomFieldValue{}).Fields
+	for _, name := range wantFields {
+		if !slices.Contains(cfFields, name) {
+			t.Errorf("Expected Fields(CustomField{}) to include %q", name)
+		}
+		if !slices.Contains(cfvFields, name) {
+			t.Errorf("Expected Fields(CustomFieldValue{}) to include %q", name)
+		}
+	}
+
+	tests := []struct {
+		name               string
+		payload            string
+		wantSubtype        FieldType
+		wantFormat         Format
+		wantRepresentation string
+		wantIDPrefix       string
+		wantFormula        bool
+		wantLookup         bool
+		wantReadOnly       bool
+	}{
+		{
+			name: "formula field",
+			payload: `{
+				"gid": "1",
+				"name": "Total Cost",
+				"resource_subtype": "number",
+				"representation_type": "formula",
+				"is_formula_field": true,
+				"is_lookup_field": false,
+				"is_value_read_only": true
+			}`,
+			wantSubtype:        FieldTypeNumber,
+			wantRepresentation: RepresentationTypeFormula,
+			wantFormula:        true,
+			wantReadOnly:       true,
+		},
+		{
+			name: "lookup field",
+			payload: `{
+				"gid": "2",
+				"name": "Parent Status",
+				"resource_subtype": "text",
+				"representation_type": "text",
+				"is_lookup_field": true,
+				"is_value_read_only": true
+			}`,
+			wantSubtype:        FieldTypeText,
+			wantRepresentation: RepresentationTypeText,
+			wantLookup:         true,
+			wantReadOnly:       true,
+		},
+		{
+			name: "custom id field",
+			payload: `{
+				"gid": "3",
+				"name": "ID",
+				"resource_subtype": "text",
+				"representation_type": "custom_id",
+				"format": "identifier",
+				"id_prefix": "BUG",
+				"is_value_read_only": true
+			}`,
+			wantSubtype:        FieldTypeText,
+			wantFormat:         FormatIdentifier,
+			wantRepresentation: RepresentationTypeCustomID,
+			wantIDPrefix:       "BUG",
+			wantReadOnly:       true,
+		},
+		{
+			name: "duration number field",
+			payload: `{
+				"gid": "4",
+				"name": "Estimated Effort",
+				"resource_subtype": "number",
+				"representation_type": "number",
+				"format": "duration",
+				"precision": 0,
+				"is_value_read_only": false
+			}`,
+			wantSubtype:        FieldTypeNumber,
+			wantFormat:         FormatDuration,
+			wantRepresentation: RepresentationTypeNumber,
+			wantReadOnly:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cf := &CustomField{}
+			if err := json.Unmarshal([]byte(tt.payload), cf); err != nil {
+				t.Fatal(err)
+			}
+			if cf.ResourceSubtype != tt.wantSubtype {
+				t.Errorf("ResourceSubtype = %q, want %q", cf.ResourceSubtype, tt.wantSubtype)
+			}
+			if cf.Format != tt.wantFormat {
+				t.Errorf("Format = %q, want %q", cf.Format, tt.wantFormat)
+			}
+			if cf.RepresentationType != tt.wantRepresentation {
+				t.Errorf("RepresentationType = %q, want %q", cf.RepresentationType, tt.wantRepresentation)
+			}
+			if cf.IDPrefix != tt.wantIDPrefix {
+				t.Errorf("IDPrefix = %q, want %q", cf.IDPrefix, tt.wantIDPrefix)
+			}
+			if IsTrue(cf.IsFormulaField) != tt.wantFormula {
+				t.Errorf("IsFormulaField = %v, want %v", IsTrue(cf.IsFormulaField), tt.wantFormula)
+			}
+			if IsTrue(cf.IsLookupField) != tt.wantLookup {
+				t.Errorf("IsLookupField = %v, want %v", IsTrue(cf.IsLookupField), tt.wantLookup)
+			}
+			if IsTrue(cf.IsValueReadOnly) != tt.wantReadOnly {
+				t.Errorf("IsValueReadOnly = %v, want %v", IsTrue(cf.IsValueReadOnly), tt.wantReadOnly)
+			}
+		})
+	}
+}
+
+func TestClient_CreateCustomField_DurationFormat(t *testing.T) {
+	defer gock.Off()
+
+	precision := 0
+	var sent map[string]any
+	gock.New("https://app.asana.com").
+		Post("/api/1.0/custom_fields").
+		AddMatcher(func(req *http.Request, _ *gock.Request) (bool, error) {
+			var body struct {
+				Data map[string]any `json:"data"`
+			}
+			err := json.NewDecoder(req.Body).Decode(&body)
+			sent = body.Data
+			return err == nil, err
+		}).
+		Reply(201).
+		JSON(o{"data": o{
+			"gid":                 "600",
+			"name":                "Time Estimate",
+			"resource_subtype":    "number",
+			"representation_type": "number",
+			"format":              "duration",
+			"precision":           0,
+			"is_value_read_only":  false,
+		}})
+
+	client := NewClient(http.DefaultClient)
+	field, err := client.CreateCustomField(&CreateCustomFieldRequest{
+		CustomFieldBase: CustomFieldBase{
+			Name:            "Time Estimate",
+			ResourceSubtype: FieldTypeNumber,
+			Format:          FormatDuration,
+			Precision:       &precision,
+		},
+		Workspace: "999",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if sent["format"] != Duration || sent["resource_subtype"] != "number" || sent["precision"] != float64(0) {
+		t.Errorf("Unexpected POST /custom_fields data: %v", sent)
+	}
+	for _, roKey := range []string{"representation_type", "is_formula_field", "is_lookup_field", "is_value_read_only"} {
+		if _, exists := sent[roKey]; exists {
+			t.Errorf("Read-only field %q should not be sent in CreateCustomFieldRequest", roKey)
+		}
+	}
+	if field.ID != "600" || field.Format != FormatDuration || field.RepresentationType != RepresentationTypeNumber {
+		t.Errorf("Unexpected created field: %+v", field)
+	}
+}
