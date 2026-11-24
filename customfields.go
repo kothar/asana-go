@@ -45,7 +45,8 @@ const (
 	FieldTypeBoolean   FieldType = "boolean"
 
 	// https://forum.asana.com/t/introducing-people-custom-field/187166
-	FieldTypePeople FieldType = "people"
+	FieldTypePeople    FieldType = "people"
+	FieldTypeReference FieldType = "reference"
 
 	Text   FieldType = FieldTypeText   // Deprecated - use FieldTypeText
 	Number FieldType = FieldTypeNumber // Deprecated - use FieldTypeNumber
@@ -92,6 +93,11 @@ type CustomFieldBase struct {
 	// field should receive inbox notifications from changes to this field.
 	HasNotificationsEnabled *bool `json:"has_notifications_enabled,omitempty"`
 
+	// Conditional. Only relevant for custom fields of type reference.
+	// Allowed resource types for values of this field (e.g. "task", "project",
+	// "portfolio", "goal", "team", "record").
+	InputRestrictions []string `json:"input_restrictions,omitempty"`
+
 	// Read-only. The name of the object.
 	Name string `json:"name,omitempty"`
 
@@ -104,7 +110,7 @@ type CustomFieldBase struct {
 	Precision *int `json:"precision,omitempty"`
 
 	// The type of the custom field. Must be one of the given values:
-	// 'text', 'enum', 'number', 'multi_enum', 'date', 'boolean'
+	// 'text', 'enum', 'number', 'multi_enum', 'date', 'boolean', 'people', 'reference'
 	ResourceSubtype FieldType `json:"resource_subtype"`
 }
 
@@ -305,6 +311,11 @@ type CustomFieldValue struct {
 	// Conditional. Only relevant for custom fields of type people.
 	// This object is the chosen values of a people custom field.
 	PeopleValue []*User `json:"people_value,omitempty"`
+
+	// Conditional. Only relevant for custom fields of type reference.
+	// This array of compact resources reflects the objects referenced by this field
+	// (such as tasks, projects, portfolios, goals, teams, or records).
+	ReferenceValue []*CompactResource `json:"reference_value,omitempty"`
 }
 
 // Fetch loads the full details for this CustomField

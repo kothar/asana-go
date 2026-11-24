@@ -40,6 +40,23 @@ type Identifiable interface {
 	GetID() string
 }
 
+// CompactResource represents a compact named Asana resource of any type
+// (for example a task, project, portfolio, goal, team, or record).
+type CompactResource struct {
+	// Read-only. Globally unique ID of the object
+	ID string `json:"gid,omitempty"`
+
+	// Read-only. The base type of this resource
+	ResourceType string `json:"resource_type,omitempty"`
+
+	// Read-only. The name of the object.
+	Name string `json:"name,omitempty"`
+}
+
+func (r *CompactResource) GetID() string {
+	return r.ID
+}
+
 // Validator types have a Validate method which is called before posting the
 // data to the API
 type Validator interface {

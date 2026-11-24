@@ -3,6 +3,7 @@ package asana
 import (
 	"encoding/json"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/h2non/gock"
@@ -120,5 +121,161 @@ func TestCustomField_Delete(t *testing.T) {
 	}
 	if !gock.IsDone() {
 		t.Error("Expected DELETE request to be made")
+	}
+}
+
+func TestCustomField_ReferenceFields(t *testing.T) {
+	if !slices.Contains(Fields(CustomField{}).Fields, "input_restrictions") {
+		t.Errorf("Expected Fields(CustomField{}) to include %q", "input_restrictions")
+	}
+	valueFields := Fields(CustomFieldValue{}).Fields
+	for _, name := range []string{"input_restrictions", "reference_value"} {
+		if !slices.Contains(valueFields, name) {
+			t.Errorf("Expected Fields(CustomFieldValue{}) to include %q", name)
+		}
+	}
+
+	cfv := &CustomFieldValue{}
+	err := json.Unmarshal([]byte(`{
+		"gid": "500",
+		"name": "Related Work",
+		"resource_subtype": "reference",
+		"input_restrictions": ["task", "project", "portfolio"],
+		"reference_value": [
+			{"gid": "101", "resource_type": "task", "name": "Build API"},
+			{"gid": "202", "resource_type": "project", "name": "Q4 Launch"},
+			{"gid": "303", "resource_type": "portfolio", "name": "Platform"},
+			{"gid": "404", "resource_type": "goal", "name": "Ship v2"},
+			{"gid": "505", "resource_type": "team", "name": "Core"},
+			{"gid": "606", "resource_type": "record", "name": "Account A"}
+		]
+	}`), cfv)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if cfv.ResourceSubtype != FieldTypeReference {
+		t.Errorf("ResourceSubtype = %q, want %q", cfv.ResourceSubtype, FieldTypeReference)
+	}
+	wantRestrictions := []string{"task", "project", "portfolio"}
+	if !slices.Equal(cfv.InputRestrictions, wantRestrictions) {
+		t.Errorf("InputRestrictions = %v, want %v", cfv.InputRestrictions, wantRestrictions)
+	}
+	if len(cfv.ReferenceValue) != 6 {
+		t.Fatalf("len(ReferenceValue) = %d, want 6", len(cfv.ReferenceValue))
+	}
+	wantRefs := []CompactResource{
+		{ID: "101", ResourceType: "task", Name: "Build API"},
+		{ID: "202", ResourceType: "project", Name: "Q4 Launch"},
+		{ID: "303", ResourceType: "portfolio", Name: "Platform"},
+		{ID: "404", ResourceType: "goal", Name: "Ship v2"},
+		{ID: "505", ResourceType: "team", Name: "Core"},
+		{ID: "606", ResourceType: "record", Name: "Account A"},
+	}
+	for i, want := range wantRefs {
+		got := cfv.ReferenceValue[i]
+		if got == nil || got.GetID() != want.ID || got.ResourceType != want.ResourceType || got.Name != want.Name {
+			t.Errorf("ReferenceValue[%d] = %+v, want %+v", i, got, want)
+		}
+	}
+}
+
+func TestClient_CreateCustomField_Reference(t *testing.T) {
+	defer gock.Off()
+
+	var sent map[string]any
+	gock.New("https://app.asana.com").
+		Post("/api/1.0/custom_fields").
+		AddMatcher(func(req *http.Request, _ *gock.Request) (bool, error) {
+			var body struct {
+				Data map[string]any `json:"data"`
+			}
+			err := json.NewDecoder(req.Body).Decode(&body)
+			sent = body.Data
+			return err == nil, err
+		}).
+		Reply(201).
+		JSON(o{"data": o{
+			"gid":                "500",
+			"name":               "Linked Tasks",
+			"resource_subtype":   "reference",
+			"input_restrictions": []string{"task", "project"},
+		}})
+
+	client := NewClient(http.DefaultClient)
+	field, err := client.CreateCustomField(&CreateCustomFieldRequest{
+		CustomFieldBase: CustomFieldBase{
+			Name:              "Linked Tasks",
+			ResourceSubtype:   FieldTypeReference,
+			InputRestrictions: []string{"task", "project"},
+		},
+		Workspace: "999",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if sent["resource_subtype"] != "reference" || sent["name"] != "Linked Tasks" || sent["workspace"] != "999" {
+		t.Errorf("Unexpected POST /custom_fields payload: %v", sent)
+	}
+	restrictions, ok := sent["input_restrictions"].([]any)
+	if !ok || len(restrictions) != 2 || restrictions[0] != "task" || restrictions[1] != "project" {
+		t.Errorf("input_restrictions payload = %#v, want [task project]", sent["input_restrictions"])
+	}
+	if field.ID != "500" || field.ResourceSubtype != FieldTypeReference || !slices.Equal(field.InputRestrictions, []string{"task", "project"}) {
+		t.Errorf("Unexpected created field: %+v", field)
+	}
+}
+
+func TestProject_AddProjectLocalCustomField_Reference(t *testing.T) {
+	defer gock.Off()
+
+	var sent map[string]any
+	gock.New("https://app.asana.com").
+		Post("/api/1.0/projects/123/addCustomFieldSetting").
+		AddMatcher(func(req *http.Request, _ *gock.Request) (bool, error) {
+			var body struct {
+				Data map[string]any `json:"data"`
+			}
+			err := json.NewDecoder(req.Body).Decode(&body)
+			sent = body.Data
+			return err == nil, err
+		}).
+		Reply(200).
+		JSON(o{"data": o{
+			"gid": "777",
+			"custom_field": o{
+				"gid":                "501",
+				"name":               "Related Projects",
+				"resource_subtype":   "reference",
+				"input_restrictions": []string{"project"},
+			},
+		}})
+
+	client := NewClient(http.DefaultClient)
+	project := &Project{ID: "123"}
+	setting, err := project.AddProjectLocalCustomField(client, &AddProjectLocalCustomFieldRequest{
+		CustomField: ProjectLocalCustomField{
+			CustomFieldBase: CustomFieldBase{
+				Name:              "Related Projects",
+				ResourceSubtype:   FieldTypeReference,
+				InputRestrictions: []string{"project"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfPayload, ok := sent["custom_field"].(map[string]any)
+	if !ok || cfPayload["resource_subtype"] != "reference" {
+		t.Errorf("Unexpected custom_field payload: %#v", sent["custom_field"])
+	}
+	restrictions, ok := cfPayload["input_restrictions"].([]any)
+	if !ok || len(restrictions) != 1 || restrictions[0] != "project" {
+		t.Errorf("Unexpected input_restrictions payload: %#v", cfPayload["input_restrictions"])
+	}
+	if setting.CustomField == nil || setting.CustomField.ID != "501" || setting.CustomField.ResourceSubtype != FieldTypeReference {
+		t.Errorf("Unexpected setting response: %+v", setting)
 	}
 }
