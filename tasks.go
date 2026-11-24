@@ -93,6 +93,14 @@ type Recurrence struct {
 	Data map[string]interface{} `json:"data,omitempty"`
 }
 
+// Approval statuses for tasks with resource_subtype "approval"
+const (
+	ApprovalStatusPending          = "pending"
+	ApprovalStatusApproved         = "approved"
+	ApprovalStatusRejected         = "rejected"
+	ApprovalStatusChangesRequested = "changes_requested"
+)
+
 // TaskBase contains the modifiable fields for the Task object
 type TaskBase struct {
 	// Name of the task. This is generally a short sentence fragment that
@@ -103,6 +111,11 @@ type TaskBase struct {
 	// the same fields and behavior, but may render differently in Asana or
 	// represent tasks with different semantic meaning.
 	ResourceSubtype string `json:"resource_subtype,omitempty"`
+
+	// Conditional. Reflects the approval status of this task. This field is
+	// kept in sync with completed, meaning pending translates to false while
+	// approved, rejected, and changes_requested translate to true.
+	ApprovalStatus string `json:"approval_status,omitempty"`
 
 	// More detailed, free-form textual information associated with the
 	// task.
@@ -128,11 +141,19 @@ type TaskBase struct {
 	// due_on.
 	DueAt *time.Time `json:"due_at,omitempty"`
 
-	// Date on which this task is due, or null if the task has no start date.
-	// This field takes a date with YYYY-MM-DD format.
+	// Date on which work begins for the task, or null if the task has no start date.
+	// This field takes a date with YYYY-MM-DD format and should not be used
+	// together with start_at.
 	// Note: due_on or due_at must be present in the request when setting or
 	// unsetting the start_on parameter.
 	StartOn *Date `json:"start_on,omitempty"`
+
+	// Date and time on which work begins for the task, or null if the task has
+	// no start time. This takes an ISO 8601 date string in UTC and should not
+	// be used together with start_on.
+	// Note: due_at must be present in the request when setting or unsetting
+	// the start_at parameter.
+	StartAt *time.Time `json:"start_at,omitempty"`
 
 	// Oauth Required. The external field allows you to store app-specific
 	// metadata on tasks, including an id that can be used to retrieve tasks
@@ -161,6 +182,14 @@ func (t *CreateTaskRequest) Validate() error {
 
 	if t.DueAt != nil {
 		t.DueOn = nil
+	}
+
+	if t.StartAt != nil {
+		if t.DueAt == nil {
+			t.StartAt = nil
+		} else {
+			t.StartOn = nil
+		}
 	}
 	return nil
 }
