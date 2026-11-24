@@ -176,6 +176,9 @@ type Project struct {
 	// share this project with other users in this organization without
 	// explicitly checking to see if they have access.
 	Public *bool `json:"public,omitempty"`
+
+	// Read-only. Opt In. A compact reference to the project's brief, or null if none exists.
+	ProjectBrief *ProjectBrief `json:"project_brief,omitempty"`
 }
 
 func (p *Project) GetID() string {
