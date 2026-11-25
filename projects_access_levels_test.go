@@ -107,3 +107,24 @@ func TestProject_AccessLevelsSentOnCreateAndUpdate(t *testing.T) {
 		t.Errorf("updated MinimumAccessLevelForSharing = %q, want %q", project.MinimumAccessLevelForSharing, AccessLevelAdmin)
 	}
 }
+
+func TestProject_AccessLevelsOmittedWhenUnset(t *testing.T) {
+	body, err := json.Marshal(&CreateProjectRequest{ProjectBase: ProjectBase{Name: "Plain"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var sent map[string]any
+	if err := json.Unmarshal(body, &sent); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{
+		"default_access_level",
+		"minimum_access_level_for_customization",
+		"minimum_access_level_for_sharing",
+	} {
+		if _, ok := sent[name]; ok {
+			t.Errorf("Expected %q to be omitted when unset, got %s", name, body)
+		}
+	}
+}
