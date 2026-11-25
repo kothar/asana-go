@@ -179,6 +179,9 @@ type Project struct {
 
 	// Read-only. Opt In. A compact reference to the project's brief, or null if none exists.
 	ProjectBrief *ProjectBrief `json:"project_brief,omitempty"`
+
+	// Read-only. The latest status update posted to this project, or null if none exists.
+	CurrentStatusUpdate *StatusUpdate `json:"current_status_update,omitempty"`
 }
 
 func (p *Project) GetID() string {
