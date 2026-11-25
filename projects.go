@@ -85,6 +85,18 @@ type ProjectBase struct {
 	// The day on which this project starts. This takes a date with format
 	// YYYY-MM-DD.
 	StartOn *Date `json:"start_on,omitempty"`
+
+	// The default access for users or teams who join or are added as members
+	// to the project. One of: admin, editor, commenter, viewer.
+	DefaultAccessLevel AccessLevel `json:"default_access_level,omitempty"`
+
+	// The minimum access level needed for project members to modify this
+	// project's workflow and appearance. One of: admin, editor.
+	MinimumAccessLevelForCustomization AccessLevel `json:"minimum_access_level_for_customization,omitempty"`
+
+	// The minimum access level needed for project members to share the
+	// project and manage project memberships. One of: admin, editor.
+	MinimumAccessLevelForSharing AccessLevel `json:"minimum_access_level_for_sharing,omitempty"`
 }
 
 // CreateProjectRequest represents a request to create a new project
