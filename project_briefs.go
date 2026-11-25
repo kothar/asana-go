@@ -20,6 +20,17 @@ type ProjectBriefRequest struct {
 	ProjectBriefBase
 }
 
+// Validate rejects ambiguous content rather than choosing one representation.
+func (r *ProjectBriefRequest) Validate() error {
+	if r == nil {
+		return fmt.Errorf("a project brief request is required")
+	}
+	if r.Text != "" && r.HTMLText != "" {
+		return fmt.Errorf("project brief text and html_text are mutually exclusive")
+	}
+	return nil
+}
+
 // ProjectBrief represents the rich-text summary on a project's Overview tab.
 type ProjectBrief struct {
 	// Read-only. Globally unique ID of the object
@@ -48,6 +59,10 @@ func (b *ProjectBrief) Fetch(client *Client, opts ...*Options) error {
 
 // CreateProjectBrief creates a new project brief on this project
 func (p *Project) CreateProjectBrief(client *Client, request *ProjectBriefRequest, opts ...*Options) (*ProjectBrief, error) {
+	if err := request.Validate(); err != nil {
+		return nil, err
+	}
+
 	client.info("Creating project brief %q on project %q", request.Title, p.ID)
 
 	result := &ProjectBrief{}
