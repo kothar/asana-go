@@ -76,6 +76,7 @@ func TestStoryJSONTagsAreUnique(t *testing.T) {
 		{"Story", reflect.TypeOf(Story{})},
 		{"StorySubtypeFields", reflect.TypeOf(StorySubtypeFields{})},
 		{"StoryBase", reflect.TypeOf(StoryBase{})},
+		{"CreateStoryRequest", reflect.TypeOf(CreateStoryRequest{})},
 	} {
 		// jsonName -> depth -> field names
 		seen := map[string]map[int][]string{}

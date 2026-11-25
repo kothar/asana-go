@@ -27,6 +27,24 @@ type StoryBase struct {
 	// Whether the story should be pinned on the resource.
 	// Note: This field is only present on comment and attachment stories.
 	IsPinned bool `json:"is_pinned,omitempty"`
+
+	// The name of the sticker in this story, or empty if there is no sticker.
+	// One of: green_checkmark, people_dancing, dancing_unicorn, heart,
+	// party_popper, people_waving_flags, splashing_narwhal, trophy,
+	// yeti_riding_unicorn, celebrating_people, determined_climbers,
+	// phoenix_spreading_love.
+	StickerName string `json:"sticker_name,omitempty"`
+}
+
+// CreateStoryRequest represents a request to create a story on a task
+type CreateStoryRequest struct {
+	StoryBase
+
+	// The gid of the top-level comment envelope to reply to, as returned in
+	// Story.CommentGID. This is not the story gid. The parent must belong to
+	// the same task and must not itself be a reply. Leave empty to create a
+	// top-level comment.
+	ParentComment string `json:"parent_comment,omitempty"`
 }
 
 type Dates struct {
@@ -123,6 +141,17 @@ type Story struct {
 	// Read-only. The time at which this object was created.
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 
+	// Read-only. Conditional. The gid of this comment's envelope, distinct
+	// from the story gid. Pass it as CreateStoryRequest.ParentComment to reply
+	// to a top-level comment. Empty for legacy comments without an envelope
+	// and for non-comment stories.
+	CommentGID string `json:"comment_gid,omitempty"`
+
+	// Read-only. Conditional. The gid of the object this comment is anchored
+	// to: the task for a top-level comment, or the parent comment's envelope
+	// (CommentGID) for a threaded reply. Also present on sticker stories.
+	AnchorGID string `json:"anchor_gid,omitempty"`
+
 	// True if the story is liked by the authorized user, false if not.
 	// Note: This property only exists for stories that provide likes.
 	Liked bool `json:"liked,omitempty"`
@@ -177,6 +206,17 @@ func (t *Task) CreateComment(client *Client, story *StoryBase) (*Story, error) {
 	result := &Story{}
 
 	err := client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), story, result)
+	return result, err
+}
+
+// CreateStory adds a story to a task. Unlike CreateComment, it can reply to
+// an existing comment thread by setting ParentComment.
+func (t *Task) CreateStory(client *Client, story *CreateStoryRequest, opts ...*Options) (*Story, error) {
+	client.info("Creating story for task %q", t.Name)
+
+	result := &Story{}
+
+	err := client.post(fmt.Sprintf("/tasks/%s/stories", t.ID), story, result, opts...)
 	return result, err
 }
 
