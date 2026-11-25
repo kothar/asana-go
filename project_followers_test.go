@@ -82,3 +82,25 @@ func TestProject_AddAndRemoveFollowers(t *testing.T) {
 		})
 	}
 }
+
+func TestProject_FollowersEmptyListMakesNoRequest(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://app.asana.com").
+		Post("/api/1.0/projects/10/(add|remove)Followers").
+		Times(2).
+		Reply(200).
+		JSON(o{"data": o{"gid": "10"}})
+
+	client := NewClient(http.DefaultClient)
+	project := &Project{ID: "10"}
+	if err := project.AddFollowers(client, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := project.RemoveFollowers(client, []string{}); err != nil {
+		t.Fatal(err)
+	}
+	if !gock.IsPending() {
+		t.Error("Expected no request for an empty follower list")
+	}
+}
