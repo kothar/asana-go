@@ -212,3 +212,10 @@ func TestStatusUpdate_FetchAndDelete(t *testing.T) {
 		t.Error("Expected GET and DELETE requests to be made")
 	}
 }
+
+func TestCreateStatusUpdateRejectsNil(t *testing.T) {
+	client := NewClient(http.DefaultClient)
+	if _, err := client.CreateStatusUpdate(nil); err == nil {
+		t.Fatal("nil request should return an error")
+	}
+}
