@@ -23,6 +23,12 @@ func gatherFields(t reflect.Type, result *Options) {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 
+		// Allow fields requiring additional OAuth scopes to opt out of
+		// default Fields() expansion while still decoding from JSON.
+		if f.Tag.Get("asana") == "-" {
+			continue
+		}
+
 		// Process a tag if present
 		if jsonTag := f.Tag.Get("json"); jsonTag != "" {
 			name := strings.Split(jsonTag, ",")[0]

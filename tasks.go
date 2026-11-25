@@ -352,6 +352,12 @@ type Task struct {
 	// Read-only. Opt In. The task's status within its custom type. Set it
 	// with CreateTaskRequest or UpdateTaskRequest.
 	CustomTypeStatusOption *CustomTypeStatusOption `json:"custom_type_status_option,omitempty"`
+
+	// Read-only. The sum of all time tracking entries on this task, in minutes.
+	// Requires the time_tracking_entries:read scope, so it is excluded from
+	// Fields(Task{}) by default; request "actual_time_minutes" explicitly in
+	// Options.Fields when that scope is available.
+	ActualTimeMinutes *float64 `json:"actual_time_minutes,omitempty" asana:"-"`
 }
 
 // Fetch loads the full details for this Task
