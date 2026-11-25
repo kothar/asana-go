@@ -282,7 +282,15 @@ func escapeQuotes(s string) string {
 
 // --------
 
-func (c *Client) postMultipart(path string, result interface{}, field string, r io.ReadCloser, filename string, contentType string, opts ...*Options) error {
+// formField is a plain-text multipart/form-data field
+type formField struct {
+	name  string
+	value string
+}
+
+// postMultipart sends formFields followed by an optional file part read from
+// r. Pass a nil r to send only the plain-text fields.
+func (c *Client) postMultipart(path string, result interface{}, formFields []formField, field string, r io.ReadCloser, filename string, contentType string, opts ...*Options) error {
 	// Make request
 	requestID := xid.New()
 	options, err := c.mergeOptions(opts...)
@@ -291,22 +299,34 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 	}
 
 	if IsTrue(options.Debug) {
-		log.Printf("%s POST multipart %s\n%s=%s;ContentType=%s", requestID, path, field, filename, contentType)
+		log.Printf("%s POST multipart %s\nfields=%v\n%s=%s;ContentType=%s", requestID, path, formFields, field, filename, contentType)
 	}
-	defer r.Close()
+	if r != nil {
+		defer r.Close()
+	}
 
-	// Write header
+	// Write the text fields first so that the file can be streamed between
+	// the buffered header and footer
 	buffer := &bytes.Buffer{}
 	partWriter := multipart.NewWriter(buffer)
-	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition",
-		fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
-			escapeQuotes(field), escapeQuotes(filename)))
-	h.Set("Content-Type", contentType)
+	for _, f := range formFields {
+		if err := partWriter.WriteField(f.name, f.value); err != nil {
+			return fmt.Errorf("%s write multipart field %q: %w", requestID, f.name, err)
+		}
+	}
 
-	_, err = partWriter.CreatePart(h)
-	if err != nil {
-		return fmt.Errorf("%s create multipart header: %w", requestID, err)
+	// Write file header
+	if r != nil {
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition",
+			fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
+				escapeQuotes(field), escapeQuotes(filename)))
+		h.Set("Content-Type", contentType)
+
+		_, err = partWriter.CreatePart(h)
+		if err != nil {
+			return fmt.Errorf("%s create multipart header: %w", requestID, err)
+		}
 	}
 	headerSize := buffer.Len()
 
@@ -315,11 +335,16 @@ func (c *Client) postMultipart(path string, result interface{}, field string, r 
 		return fmt.Errorf("%s create multipart footer: %w", requestID, err)
 	}
 
+	var body io.Reader = bytes.NewReader(buffer.Bytes())
+	if r != nil {
+		body = io.MultiReader(
+			bytes.NewReader(buffer.Bytes()[:headerSize]),
+			r,
+			bytes.NewReader(buffer.Bytes()[headerSize:]))
+	}
+
 	// Create request
-	request, err := http.NewRequest(http.MethodPost, c.getURL(path), io.MultiReader(
-		bytes.NewReader(buffer.Bytes()[:headerSize]),
-		r,
-		bytes.NewReader(buffer.Bytes()[headerSize:])))
+	request, err := http.NewRequest(http.MethodPost, c.getURL(path), body)
 	if err != nil {
 		return fmt.Errorf("%s request error: %w", requestID, err)
 	}

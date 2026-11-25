@@ -44,6 +44,10 @@ type Attachment struct {
 	Host string `json:"host,omitempty"`
 
 	// Read-only. The task this object is attached to.
+	//
+	// Note: attachments can also belong to a project or project brief. Asana
+	// documents this field as a compact task, so for those parents only the
+	// fields they share with a task, such as gid and name, are decoded here.
 	Parent *Task `json:"parent,omitempty"`
 
 	// Undocumented. A permanent asana.com link which should be a permalink
@@ -83,7 +87,7 @@ func (t *Task) CreateAttachment(client *Client, request *NewAttachment) (*Attach
 	client.trace("Uploading attachment for %q", t.Name)
 
 	result := &Attachment{}
-	err := client.postMultipart(fmt.Sprintf("/tasks/%s/attachments", t.ID), result, "file", request.Reader, request.FileName, request.ContentType)
+	err := client.postMultipart(fmt.Sprintf("/tasks/%s/attachments", t.ID), result, nil, "file", request.Reader, request.FileName, request.ContentType)
 	if err != nil {
 		return nil, fmt.Errorf("upload attachment: %w", err)
 	}
@@ -107,4 +111,103 @@ func (t *Task) CreateExternalAttachment(client *Client, request *ExternalAttachm
 		return nil, fmt.Errorf("create external attachment: %w", err)
 	}
 	return result, nil
+}
+
+// attachmentsRequestParams selects the object to list attachments from
+type attachmentsRequestParams struct {
+	// Globally unique identifier for a project, project brief or task
+	Parent string `url:"parent"`
+}
+
+// parentAttachments lists the attachments on a project, project brief or
+// task using GET /attachments
+func (c *Client) parentAttachments(parent string, opts ...*Options) ([]*Attachment, *NextPage, error) {
+	var result []*Attachment
+
+	query := &attachmentsRequestParams{Parent: parent}
+	nextPage, err := c.get("/attachments", query, &result, opts...)
+	return result, nextPage, err
+}
+
+// createParentAttachment uploads a file attachment to a project, project
+// brief or task using POST /attachments
+func (c *Client) createParentAttachment(parent string, request *NewAttachment) (*Attachment, error) {
+	if request == nil || request.Reader == nil {
+		return nil, fmt.Errorf("upload attachment: no file to upload")
+	}
+	fields := []formField{{name: "parent", value: parent}}
+
+	result := &Attachment{}
+	err := c.postMultipart("/attachments", result, fields, "file", request.Reader, request.FileName, request.ContentType)
+	if err != nil {
+		return nil, fmt.Errorf("upload attachment: %w", err)
+	}
+	return result, nil
+}
+
+// createParentExternalAttachment attaches an external URL to a project or
+// project brief using POST /attachments. The endpoint only accepts
+// multipart/form-data, so the request is sent as form fields rather than JSON.
+// ConnectToApp is not sent, because Asana only applies it to task attachments.
+func (c *Client) createParentExternalAttachment(parent string, request *ExternalAttachmentRequest) (*Attachment, error) {
+	fields := []formField{
+		{name: "parent", value: parent},
+		{name: "resource_subtype", value: "external"},
+		{name: "name", value: request.Name},
+		{name: "url", value: request.URL},
+	}
+
+	result := &Attachment{}
+	err := c.postMultipart("/attachments", result, fields, "", nil, "", "")
+	if err != nil {
+		return nil, fmt.Errorf("create external attachment: %w", err)
+	}
+	return result, nil
+}
+
+// Attachments lists the files in the "Key resources" section of this
+// project's Overview
+func (p *Project) Attachments(client *Client, opts ...*Options) ([]*Attachment, *NextPage, error) {
+	client.trace("Listing attachments for project %q", p.Name)
+
+	return client.parentAttachments(p.ID, opts...)
+}
+
+// CreateAttachment uploads a file to the "Key resources" section of this
+// project's Overview
+func (p *Project) CreateAttachment(client *Client, request *NewAttachment) (*Attachment, error) {
+	client.trace("Uploading attachment for project %q", p.Name)
+
+	return client.createParentAttachment(p.ID, request)
+}
+
+// CreateExternalAttachment attaches an external URL to the "Key resources"
+// section of this project's Overview. ConnectToApp is ignored, because Asana
+// only applies it to task attachments.
+func (p *Project) CreateExternalAttachment(client *Client, request *ExternalAttachmentRequest) (*Attachment, error) {
+	client.trace("Creating external attachment for project %q", p.Name)
+
+	return client.createParentExternalAttachment(p.ID, request)
+}
+
+// Attachments lists the files inline in this project brief
+func (b *ProjectBrief) Attachments(client *Client, opts ...*Options) ([]*Attachment, *NextPage, error) {
+	client.trace("Listing attachments for project brief %q", b.ID)
+
+	return client.parentAttachments(b.ID, opts...)
+}
+
+// CreateAttachment uploads a file to this project brief
+func (b *ProjectBrief) CreateAttachment(client *Client, request *NewAttachment) (*Attachment, error) {
+	client.trace("Uploading attachment for project brief %q", b.ID)
+
+	return client.createParentAttachment(b.ID, request)
+}
+
+// CreateExternalAttachment attaches an external URL to this project brief.
+// ConnectToApp is ignored, because Asana only applies it to task attachments.
+func (b *ProjectBrief) CreateExternalAttachment(client *Client, request *ExternalAttachmentRequest) (*Attachment, error) {
+	client.trace("Creating external attachment for project brief %q", b.ID)
+
+	return client.createParentExternalAttachment(b.ID, request)
 }
