@@ -191,9 +191,12 @@ func TestParentAttachments_External(t *testing.T) {
 				Reply(200).
 				JSON(o{"data": o{"gid": "31", "name": "Design doc", "resource_subtype": "external"}})
 
+			// ConnectToApp only applies to task attachments, so it is not sent
+			connect := true
 			attachment, err := tc.create(NewClient(http.DefaultClient), &ExternalAttachmentRequest{
-				Name: "Design doc",
-				URL:  "https://example.com/doc",
+				Name:         "Design doc",
+				URL:          "https://example.com/doc",
+				ConnectToApp: &connect,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -215,6 +218,25 @@ func TestParentAttachments_External(t *testing.T) {
 				t.Errorf("Unexpected attachment: %+v", attachment)
 			}
 		})
+	}
+}
+
+func TestParentAttachments_UploadWithoutFile(t *testing.T) {
+	defer gock.Off()
+
+	gock.New("https://app.asana.com").
+		Post("/api/1.0/attachments").
+		Reply(200).
+		JSON(o{"data": o{"gid": "30"}})
+
+	client := NewClient(http.DefaultClient)
+	for _, request := range []*NewAttachment{nil, {FileName: "notes.txt"}} {
+		if _, err := (&Project{ID: "10"}).CreateAttachment(client, request); err == nil {
+			t.Errorf("Expected an error for %+v", request)
+		}
+	}
+	if !gock.IsPending() {
+		t.Error("Expected no request without a file")
 	}
 }
 

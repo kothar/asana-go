@@ -3,7 +3,6 @@ package asana
 import (
 	"fmt"
 	"io"
-	"strconv"
 	"time"
 )
 
@@ -48,7 +47,7 @@ type Attachment struct {
 	//
 	// Note: attachments can also belong to a project or project brief. Asana
 	// documents this field as a compact task, so for those parents only the
-	// gid and name are decoded here.
+	// fields they share with a task, such as gid and name, are decoded here.
 	Parent *Task `json:"parent,omitempty"`
 
 	// Undocumented. A permanent asana.com link which should be a permalink
@@ -133,6 +132,9 @@ func (c *Client) parentAttachments(parent string, opts ...*Options) ([]*Attachme
 // createParentAttachment uploads a file attachment to a project, project
 // brief or task using POST /attachments
 func (c *Client) createParentAttachment(parent string, request *NewAttachment) (*Attachment, error) {
+	if request == nil || request.Reader == nil {
+		return nil, fmt.Errorf("upload attachment: no file to upload")
+	}
 	fields := []formField{{name: "parent", value: parent}}
 
 	result := &Attachment{}
@@ -143,18 +145,16 @@ func (c *Client) createParentAttachment(parent string, request *NewAttachment) (
 	return result, nil
 }
 
-// createParentExternalAttachment attaches an external URL to a project,
-// project brief or task using POST /attachments. The endpoint only accepts
+// createParentExternalAttachment attaches an external URL to a project or
+// project brief using POST /attachments. The endpoint only accepts
 // multipart/form-data, so the request is sent as form fields rather than JSON.
+// ConnectToApp is not sent, because Asana only applies it to task attachments.
 func (c *Client) createParentExternalAttachment(parent string, request *ExternalAttachmentRequest) (*Attachment, error) {
 	fields := []formField{
 		{name: "parent", value: parent},
 		{name: "resource_subtype", value: "external"},
 		{name: "name", value: request.Name},
 		{name: "url", value: request.URL},
-	}
-	if request.ConnectToApp != nil {
-		fields = append(fields, formField{name: "connect_to_app", value: strconv.FormatBool(*request.ConnectToApp)})
 	}
 
 	result := &Attachment{}
@@ -182,8 +182,8 @@ func (p *Project) CreateAttachment(client *Client, request *NewAttachment) (*Att
 }
 
 // CreateExternalAttachment attaches an external URL to the "Key resources"
-// section of this project's Overview. ConnectToApp only applies to task
-// attachments.
+// section of this project's Overview. ConnectToApp is ignored, because Asana
+// only applies it to task attachments.
 func (p *Project) CreateExternalAttachment(client *Client, request *ExternalAttachmentRequest) (*Attachment, error) {
 	client.trace("Creating external attachment for project %q", p.Name)
 
@@ -205,7 +205,7 @@ func (b *ProjectBrief) CreateAttachment(client *Client, request *NewAttachment) 
 }
 
 // CreateExternalAttachment attaches an external URL to this project brief.
-// ConnectToApp only applies to task attachments.
+// ConnectToApp is ignored, because Asana only applies it to task attachments.
 func (b *ProjectBrief) CreateExternalAttachment(client *Client, request *ExternalAttachmentRequest) (*Attachment, error) {
 	client.trace("Creating external attachment for project brief %q", b.ID)
 
