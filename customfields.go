@@ -67,7 +67,28 @@ const (
 	Identifier = "identifier"
 	Percentage = "percentage"
 	Custom     = "custom"
+	Duration   = "duration"
 	None       = "none"
+
+	FormatCurrency   Format = Currency
+	FormatIdentifier Format = Identifier
+	FormatPercentage Format = Percentage
+	FormatCustom     Format = Custom
+	FormatDuration   Format = Duration
+	FormatNone       Format = None
+)
+
+// Representation types reported by CustomField.RepresentationType
+const (
+	RepresentationTypeText      = "text"
+	RepresentationTypeEnum      = "enum"
+	RepresentationTypeMultiEnum = "multi_enum"
+	RepresentationTypeNumber    = "number"
+	RepresentationTypeDate      = "date"
+	RepresentationTypePeople    = "people"
+	RepresentationTypeFormula   = "formula"
+	RepresentationTypeCustomID  = "custom_id"
+	RepresentationTypeReference = "reference"
 )
 
 type CustomFieldBase struct {
@@ -92,6 +113,9 @@ type CustomFieldBase struct {
 	// Conditional. This flag describes whether a follower of a task with this
 	// field should receive inbox notifications from changes to this field.
 	HasNotificationsEnabled *bool `json:"has_notifications_enabled,omitempty"`
+
+	// The unique custom ID string prefix for a custom_id custom field.
+	IDPrefix string `json:"id_prefix,omitempty"`
 
 	// Conditional. Only relevant for custom fields of type reference.
 	// Allowed resource types for values of this field (e.g. "task", "project",
@@ -141,6 +165,22 @@ type CustomField struct {
 	// Read-only. Conditional. A unique identifier to associate this field with
 	// the template source of truth.
 	AsanaCreatedField string `json:"asana_created_field,omitempty"`
+
+	// Read-only. Tells the underlying type of the custom field (for example
+	// "formula" or "custom_id" in addition to the standard field types).
+	RepresentationType string `json:"representation_type,omitempty"`
+
+	// Read-only. Conditional. Describes whether this custom field is a formula
+	// custom field whose values are calculated and cannot be written directly.
+	IsFormulaField *bool `json:"is_formula_field,omitempty"`
+
+	// Read-only. Conditional. Describes whether this custom field is a lookup
+	// custom field.
+	IsLookupField *bool `json:"is_lookup_field,omitempty"`
+
+	// Read-only. Conditional. Describes whether values for this custom field
+	// are read-only (for example formula, lookup, or custom ID fields).
+	IsValueReadOnly *bool `json:"is_value_read_only,omitempty"`
 }
 
 func (f *CustomField) GetID() string {
