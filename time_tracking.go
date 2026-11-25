@@ -69,10 +69,10 @@ type TimeTrackingEntry struct {
 	// APPROVED, or REJECTED).
 	ApprovalStatus string `json:"approval_status,omitempty"`
 
-	// Read-only. The current billable status of the entry.
+	// The current billable status of the entry; writes require Timesheets and Budgets.
 	BillableStatus BillableStatus `json:"billable_status,omitempty"`
 
-	// Read-only. The description of the entry.
+	// The description of the entry; writes require Timesheets and Budgets.
 	Description string `json:"description,omitempty"`
 
 	// Read-only. Categories assigned to this entry. Requires the
