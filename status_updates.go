@@ -140,6 +140,9 @@ func (c *Client) StatusUpdates(query *StatusUpdateQuery, opts ...*Options) ([]*S
 
 // CreateStatusUpdate creates a new status update on the specified parent object
 func (c *Client) CreateStatusUpdate(request *CreateStatusUpdateRequest, opts ...*Options) (*StatusUpdate, error) {
+	if request == nil {
+		return nil, fmt.Errorf("a status update request is required")
+	}
 	c.info("Creating status update %q on parent %q", request.Title, request.Parent)
 
 	result := &StatusUpdate{}

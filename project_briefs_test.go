@@ -177,3 +177,17 @@ func TestProjectBrief_Delete(t *testing.T) {
 		t.Error("Expected DELETE request to be made")
 	}
 }
+
+func TestProjectBriefRejectsAmbiguousContent(t *testing.T) {
+	client := NewClient(http.DefaultClient)
+	request := &ProjectBriefRequest{ProjectBriefBase: ProjectBriefBase{Text: "plain", HTMLText: "<body>formatted</body>"}}
+	if _, err := (&Project{ID: "p"}).CreateProjectBrief(client, request); err == nil {
+		t.Fatal("create accepted both text representations")
+	}
+	if err := (&ProjectBrief{ID: "b"}).Update(client, request); err == nil {
+		t.Fatal("update accepted both text representations")
+	}
+	if _, err := (&Project{ID: "p"}).CreateProjectBrief(client, nil); err == nil {
+		t.Fatal("create accepted nil request")
+	}
+}
