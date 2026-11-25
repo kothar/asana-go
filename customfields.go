@@ -330,6 +330,10 @@ type CustomFieldValue struct {
 	// the string of text for the field.
 	TextValue *string `json:"text_value,omitempty"`
 
+	// Read-only. Conditional. Only relevant for custom fields of type text.
+	// The HTML representation of TextValue, wrapped in <body></body> tags.
+	HTMLTextValue *string `json:"html_text_value,omitempty"`
+
 	// Custom fields of type number will return a number_value property
 	// containing the number for the field.
 	NumberValue *float64 `json:"number_value,omitempty"`

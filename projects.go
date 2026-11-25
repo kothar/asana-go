@@ -95,6 +95,10 @@ type CreateProjectRequest struct {
 	Team         string                 `json:"team,omitempty"`
 	Owner        string                 `json:"owner,omitempty"`
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+
+	// Rich-text values for text custom fields, keyed by custom field gid.
+	// Each value must be an HTML string wrapped in <body></body> tags.
+	HTMLCustomFields map[string]string `json:"html_custom_fields,omitempty"`
 }
 
 // UpdateProjectRequest represents a request to update a project
@@ -103,6 +107,10 @@ type UpdateProjectRequest struct {
 
 	Owner        string                 `json:"owner,omitempty"`
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+
+	// Rich-text values for text custom fields, keyed by custom field gid.
+	// Each value must be an HTML string wrapped in <body></body> tags.
+	HTMLCustomFields map[string]string `json:"html_custom_fields,omitempty"`
 }
 
 // Project represents a prioritized list of tasks in Asana. It exists in a

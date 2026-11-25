@@ -208,6 +208,10 @@ type CreateTaskRequest struct {
 	Tags         []string               `json:"tags,omitempty"`
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 
+	// Rich-text values for text custom fields, keyed by custom field gid.
+	// Each value must be an HTML string wrapped in <body></body> tags.
+	HTMLCustomFields map[string]string `json:"html_custom_fields,omitempty"`
+
 	// The gid of a custom type to give the task. Asana requires it when
 	// ResourceSubtype is "custom", and only accepts a type that is available
 	// in one of the task's projects.
@@ -228,6 +232,10 @@ type UpdateTaskRequest struct {
 	Assignee     string                 `json:"assignee,omitempty"`  // User to which this task is assigned, or null if the task is unassigned.
 	Followers    []string               `json:"followers,omitempty"` // Array of users following this task.
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+
+	// Rich-text values for text custom fields, keyed by custom field gid.
+	// Each value must be an HTML string wrapped in <body></body> tags.
+	HTMLCustomFields map[string]string `json:"html_custom_fields,omitempty"`
 
 	// The gid of a custom type to give the task. Asana only accepts it when
 	// ResourceSubtype is "custom", and only for a type that is available in
