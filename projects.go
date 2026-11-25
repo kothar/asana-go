@@ -2,6 +2,7 @@ package asana
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -215,6 +216,45 @@ func (p *Project) Delete(client *Client) error {
 	client.info("Deleting project %q", p.Name)
 
 	return client.delete(fmt.Sprintf("/projects/%s", p.ID))
+}
+
+// projectFollowersRequest is the body of the addFollowers and removeFollowers
+// endpoints. Asana documents followers as a comma-separated string of users,
+// each of which can be "me", an email address or a user gid.
+type projectFollowersRequest struct {
+	Followers string `json:"followers"`
+}
+
+// AddFollowers adds the given users as followers of this project. Users who
+// are not already members of the project also become members. Each entry can
+// be "me", an email address or a user gid.
+//
+// The project is updated with the record returned by Asana. An empty list
+// makes no request.
+func (p *Project) AddFollowers(client *Client, followers []string, opts ...*Options) error {
+	client.trace("Adding followers to project %q", p.Name)
+	if len(followers) == 0 {
+		return nil
+	}
+
+	request := &projectFollowersRequest{Followers: strings.Join(followers, ",")}
+	return client.post(fmt.Sprintf("/projects/%s/addFollowers", p.ID), request, p, opts...)
+}
+
+// RemoveFollowers stops the given users following this project. Project
+// membership is not affected. Each entry can be "me", an email address or a
+// user gid.
+//
+// The project is updated with the record returned by Asana. An empty list
+// makes no request.
+func (p *Project) RemoveFollowers(client *Client, followers []string, opts ...*Options) error {
+	client.trace("Removing followers from project %q", p.Name)
+	if len(followers) == 0 {
+		return nil
+	}
+
+	request := &projectFollowersRequest{Followers: strings.Join(followers, ",")}
+	return client.post(fmt.Sprintf("/projects/%s/removeFollowers", p.ID), request, p, opts...)
 }
 
 // Projects returns a list of projects in this workspace
